@@ -4,40 +4,41 @@
     <title>Restaurants</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body class="bg-gray-100">
+<body class="bg-gradient-to-r from-purple-100 to-blue-100">
     <div class="container mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold mb-8">Restaurants</h1>
+        <!-- Header -->
+        <h1 class="text-4xl font-bold text-center text-purple-800 mb-8">Discover Restaurants</h1>
 
         <!-- Location Search -->
-        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
-            <h2 class="text-xl font-semibold mb-4">Search Nearby Restaurants</h2>
-            <div class="flex gap-4">
-                <input type="number" id="latitude" placeholder="Latitude" class="border p-2 rounded" step="any">
-                <input type="number" id="longitude" placeholder="Longitude" class="border p-2 rounded" step="any">
-                <input type="number" id="radius" placeholder="Radius (km)" class="border p-2 rounded" value="3">
-                <button onclick="searchNearby()" class="bg-blue-500 text-white px-4 py-2 rounded">Search</button>
+        <div class="bg-white p-6 rounded-lg shadow-lg mb-8">
+            <h2 class="text-2xl font-semibold text-purple-700 mb-4">📍 Search Nearby Restaurants</h2>
+            <div class="flex flex-col md:flex-row gap-4">
+                <input type="number" id="latitude" placeholder="Latitude" class="border p-2 rounded-lg focus:ring-2 focus:ring-purple-500" step="any">
+                <input type="number" id="longitude" placeholder="Longitude" class="border p-2 rounded-lg focus:ring-2 focus:ring-purple-500" step="any">
+                <input type="number" id="radius" placeholder="Radius (km)" class="border p-2 rounded-lg focus:ring-2 focus:ring-purple-500" value="3">
+                <button onclick="searchNearby()" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition duration-300">Search</button>
             </div>
         </div>
 
         <!-- Image Search -->
-        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
-            <h2 class="text-xl font-semibold mb-4">Search by Food Image</h2>
-            <div class="flex gap-4">
-                <input type="file" id="foodImage" accept="image/*" class="border p-2 rounded">
-                <button onclick="searchByImage()" class="bg-blue-500 text-white px-4 py-2 rounded">Search</button>
+        <div class="bg-white p-6 rounded-lg shadow-lg mb-8">
+            <h2 class="text-2xl font-semibold text-purple-700 mb-4">🍔 Search by Food Image</h2>
+            <div class="flex flex-col md:flex-row gap-4">
+                <input type="file" id="foodImage" accept="image/*" class="border p-2 rounded-lg focus:ring-2 focus:ring-purple-500">
+                <button onclick="searchByImage()" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition duration-300">Search</button>
             </div>
         </div>
 
         <!-- Restaurant List -->
         <div id="restaurantList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Restaurants will be populated here -->
+            <!-- Restaurants will be dynamically populated here -->
         </div>
 
         <!-- Pagination -->
         <div class="mt-8 flex justify-center gap-4">
-            <button onclick="previousPage()" class="bg-blue-500 text-white px-4 py-2 rounded">Previous</button>
-            <span id="currentPage" class="py-2">Page 1</span>
-            <button onclick="nextPage()" class="bg-blue-500 text-white px-4 py-2 rounded">Next</button>
+            <button onclick="previousPage()" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition duration-300">Previous</button>
+            <span id="currentPage" class="py-2 text-purple-700 font-semibold">Page 1</span>
+            <button onclick="nextPage()" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition duration-300">Next</button>
         </div>
     </div>
 
@@ -45,6 +46,7 @@
         let currentPage = 1;
         const limit = 9;
 
+        // Load restaurants from the backend
         async function loadRestaurants(page = 1) {
             const response = await fetch(`/api/restaurants?page=${page}&limit=${limit}`);
             const restaurants = await response.json();
@@ -53,19 +55,20 @@
             document.getElementById('currentPage').textContent = `Page ${page}`;
         }
 
+        // Display restaurants in the UI
         function displayRestaurants(restaurants) {
             const container = document.getElementById('restaurantList');
             container.innerHTML = '';
             
             restaurants.forEach(restaurant => {
                 const card = document.createElement('div');
-                card.className = 'bg-white p-6 rounded-lg shadow-md';
+                card.className = 'bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300';
                 card.innerHTML = `
-                    <h3 class="text-xl font-semibold mb-2">${restaurant.name}</h3>
-                    <p class="text-gray-600 mb-2">${restaurant.cuisines}</p>
-                    <p class="text-gray-600 mb-4">${restaurant.address}</p>
+                    <h3 class="text-xl font-semibold text-purple-800 mb-2">${restaurant.name}</h3>
+                    <p class="text-gray-600 mb-2">🍽️ ${restaurant.cuisines}</p>
+                    <p class="text-gray-600 mb-4">📍 ${restaurant.address}</p>
                     <a href="/restaurant/${restaurant.restaurant_id}" 
-                       class="bg-blue-500 text-white px-4 py-2 rounded inline-block">
+                       class="bg-purple-600 text-white px-4 py-2 rounded-lg inline-block hover:bg-purple-700 transition duration-300">
                         View Details
                     </a>
                 `;
@@ -73,6 +76,7 @@
             });
         }
 
+        // Search nearby restaurants
         async function searchNearby() {
             const lat = document.getElementById('latitude').value;
             const lon = document.getElementById('longitude').value;
@@ -83,6 +87,7 @@
             displayRestaurants(restaurants);
         }
 
+        // Search restaurants by image
         async function searchByImage() {
             const fileInput = document.getElementById('foodImage');
             const file = fileInput.files[0];
@@ -99,17 +104,19 @@
             displayRestaurants(restaurants);
         }
 
+        // Pagination: Previous Page
         function previousPage() {
             if (currentPage > 1) {
                 loadRestaurants(currentPage - 1);
             }
         }
 
+        // Pagination: Next Page
         function nextPage() {
             loadRestaurants(currentPage + 1);
         }
 
-        // Load initial data
+        // Load initial data on page load
         loadRestaurants();
     </script>
 </body>
