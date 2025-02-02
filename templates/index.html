@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Restaurants</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-8">Restaurants</h1>
+
+        <!-- Location Search -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h2 class="text-xl font-semibold mb-4">Search Nearby Restaurants</h2>
+            <div class="flex gap-4">
+                <input type="number" id="latitude" placeholder="Latitude" class="border p-2 rounded" step="any">
+                <input type="number" id="longitude" placeholder="Longitude" class="border p-2 rounded" step="any">
+                <input type="number" id="radius" placeholder="Radius (km)" class="border p-2 rounded" value="3">
+                <button onclick="searchNearby()" class="bg-blue-500 text-white px-4 py-2 rounded">Search</button>
+            </div>
+        </div>
+
+        <!-- Image Search -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h2 class="text-xl font-semibold mb-4">Search by Food Image</h2>
+            <div class="flex gap-4">
+                <input type="file" id="foodImage" accept="image/*" class="border p-2 rounded">
+                <button onclick="searchByImage()" class="bg-blue-500 text-white px-4 py-2 rounded">Search</button>
+            </div>
+        </div>
+
+        <!-- Restaurant List -->
+        <div id="restaurantList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Restaurants will be populated here -->
+        </div>
+
+        <!-- Pagination -->
+        <div class="mt-8 flex justify-center gap-4">
+            <button onclick="previousPage()" class="bg-blue-500 text-white px-4 py-2 rounded">Previous</button>
+            <span id="currentPage" class="py-2">Page 1</span>
+            <button onclick="nextPage()" class="bg-blue-500 text-white px-4 py-2 rounded">Next</button>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        const limit = 9;
+
+        async function loadRestaurants(page = 1) {
+            const response = await fetch(`/api/restaurants?page=${page}&limit=${limit}`);
+            const restaurants = await response.json();
+            displayRestaurants(restaurants);
+            currentPage = page;
+            document.getElementById('currentPage').textContent = `Page ${page}`;
+        }
+
+        function displayRestaurants(restaurants) {
+            const container = document.getElementById('restaurantList');
+            container.innerHTML = '';
+            
+            restaurants.forEach(restaurant => {
+                const card = document.createElement('div');
+                card.className = 'bg-white p-6 rounded-lg shadow-md';
+                card.innerHTML = `
+                    <h3 class="text-xl font-semibold mb-2">${restaurant.name}</h3>
+                    <p class="text-gray-600 mb-2">${restaurant.cuisines}</p>
+                    <p class="text-gray-600 mb-4">${restaurant.address}</p>
+                    <a href="/restaurant/${restaurant.restaurant_id}" 
+                       class="bg-blue-500 text-white px-4 py-2 rounded inline-block">
+                        View Details
+                    </a>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        async function searchNearby() {
+            const lat = document.getElementById('latitude').value;
+            const lon = document.getElementById('longitude').value;
+            const radius = document.getElementById('radius').value;
+            
+            const response = await fetch(`/api/restaurants/nearby?lat=${lat}&lon=${lon}&radius=${radius}`);
+            const restaurants = await response.json();
+            displayRestaurants(restaurants);
+        }
+
+        async function searchByImage() {
+            const fileInput = document.getElementById('foodImage');
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const response = await fetch('/api/restaurants/search-by-image', {
+                method: 'POST',
+                body: formData
+            });
+            const restaurants = await response.json();
+            displayRestaurants(restaurants);
+        }
+
+        function previousPage() {
+            if (currentPage > 1) {
+                loadRestaurants(currentPage - 1);
+            }
+        }
+
+        function nextPage() {
+            loadRestaurants(currentPage + 1);
+        }
+
+        // Load initial data
+        loadRestaurants();
+    </script>
+</body>
+</html>
