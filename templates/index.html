@@ -1,123 +1,64 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Restaurants</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Finder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gradient-to-r from-purple-100 to-blue-100">
-    <div class="container mx-auto px-4 py-8">
-        <!-- Header -->
-        <h1 class="text-4xl font-bold text-center text-purple-800 mb-8">Discover Restaurants</h1>
-
-        <!-- Location Search -->
-        <div class="bg-white p-6 rounded-lg shadow-lg mb-8">
-            <h2 class="text-2xl font-semibold text-purple-700 mb-4">📍 Search Nearby Restaurants</h2>
-            <div class="flex flex-col md:flex-row gap-4">
-                <input type="number" id="latitude" placeholder="Latitude" class="border p-2 rounded-lg focus:ring-2 focus:ring-purple-500" step="any">
-                <input type="number" id="longitude" placeholder="Longitude" class="border p-2 rounded-lg focus:ring-2 focus:ring-purple-500" step="any">
-                <input type="number" id="radius" placeholder="Radius (km)" class="border p-2 rounded-lg focus:ring-2 focus:ring-purple-500" value="3">
-                <button onclick="searchNearby()" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition duration-300">Search</button>
+<body class="bg-gray-100">
+    <header class="bg-white shadow-md">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-800">Restaurant Finder</h1>
+            <div class="space-x-4">
+                <a href="/" class="text-gray-600 hover:text-gray-900">Home</a>
+                <a href="/nearby-search" class="text-gray-600 hover:text-gray-900">Nearby Restaurants</a>
+                <a href="/image-search" class="text-gray-600 hover:text-gray-900">Image Search</a>
+                <a href="/restaurant-list" class="text-gray-600 hover:text-gray-900">All Restaurants</a>
             </div>
-        </div>
+        </nav>
+    </header>
 
-        <!-- Image Search -->
-        <div class="bg-white p-6 rounded-lg shadow-lg mb-8">
-            <h2 class="text-2xl font-semibold text-purple-700 mb-4">🍔 Search by Food Image</h2>
-            <div class="flex flex-col md:flex-row gap-4">
-                <input type="file" id="foodImage" accept="image/*" class="border p-2 rounded-lg focus:ring-2 focus:ring-purple-500">
-                <button onclick="searchByImage()" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition duration-300">Search</button>
-            </div>
-        </div>
+    <main class="container mx-auto px-6 py-8">
+        <section class="text-center">
+            <h2 class="text-4xl font-bold mb-4 text-gray-800">Discover Amazing Restaurants</h2>
+            <p class="text-gray-600 mb-8 max-w-2xl mx-auto">
+                Explore restaurants near you, search by cuisine images, or browse our comprehensive list. 
+                Find your next dining experience with ease!
+            </p>
 
-        <!-- Restaurant List -->
-        <div id="restaurantList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Restaurants will be dynamically populated here -->
-        </div>
-
-        <!-- Pagination -->
-        <div class="mt-8 flex justify-center gap-4">
-            <button onclick="previousPage()" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition duration-300">Previous</button>
-            <span id="currentPage" class="py-2 text-purple-700 font-semibold">Page 1</span>
-            <button onclick="nextPage()" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition duration-300">Next</button>
-        </div>
-    </div>
-
-    <script>
-        let currentPage = 1;
-        const limit = 9;
-
-        // Load restaurants from the backend
-        async function loadRestaurants(page = 1) {
-            const response = await fetch(`/api/restaurants?page=${page}&limit=${limit}`);
-            const restaurants = await response.json();
-            displayRestaurants(restaurants);
-            currentPage = page;
-            document.getElementById('currentPage').textContent = `Page ${page}`;
-        }
-
-        // Display restaurants in the UI
-        function displayRestaurants(restaurants) {
-            const container = document.getElementById('restaurantList');
-            container.innerHTML = '';
-            
-            restaurants.forEach(restaurant => {
-                const card = document.createElement('div');
-                card.className = 'bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300';
-                card.innerHTML = `
-                    <h3 class="text-xl font-semibold text-purple-800 mb-2">${restaurant.name}</h3>
-                    <p class="text-gray-600 mb-2">🍽️ ${restaurant.cuisines}</p>
-                    <p class="text-gray-600 mb-4">📍 ${restaurant.address}</p>
-                    <a href="/restaurant/${restaurant.restaurant_id}" 
-                       class="bg-purple-600 text-white px-4 py-2 rounded-lg inline-block hover:bg-purple-700 transition duration-300">
-                        View Details
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold mb-4">Nearby Restaurants</h3>
+                    <p class="mb-4">Find restaurants close to your current location.</p>
+                    <a href="/nearby-search" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                        Search Nearby
                     </a>
-                `;
-                container.appendChild(card);
-            });
-        }
+                </div>
 
-        // Search nearby restaurants
-        async function searchNearby() {
-            const lat = document.getElementById('latitude').value;
-            const lon = document.getElementById('longitude').value;
-            const radius = document.getElementById('radius').value;
-            
-            const response = await fetch(`/api/restaurants/nearby?lat=${lat}&lon=${lon}&radius=${radius}`);
-            const restaurants = await response.json();
-            displayRestaurants(restaurants);
-        }
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold mb-4">Image Search</h3>
+                    <p class="mb-4">Upload a food image to find similar cuisine restaurants.</p>
+                    <a href="/image-search" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                        Search by Image
+                    </a>
+                </div>
 
-        // Search restaurants by image
-        async function searchByImage() {
-            const fileInput = document.getElementById('foodImage');
-            const file = fileInput.files[0];
-            if (!file) return;
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold mb-4">All Restaurants</h3>
+                    <p class="mb-4">Browse our complete list of restaurants.</p>
+                    <a href="/restaurant-list" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                        View List
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
 
-            const formData = new FormData();
-            formData.append('image', file);
-
-            const response = await fetch('/api/restaurants/search-by-image', {
-                method: 'POST',
-                body: formData
-            });
-            const restaurants = await response.json();
-            displayRestaurants(restaurants);
-        }
-
-        // Pagination: Previous Page
-        function previousPage() {
-            if (currentPage > 1) {
-                loadRestaurants(currentPage - 1);
-            }
-        }
-
-        // Pagination: Next Page
-        function nextPage() {
-            loadRestaurants(currentPage + 1);
-        }
-
-        // Load initial data on page load
-        loadRestaurants();
-    </script>
+    <footer class="bg-white shadow-md mt-8">
+        <div class="container mx-auto px-6 py-4 text-center">
+            <p class="text-gray-600">&copy; 2024 Restaurant Finder. All rights reserved.</p>
+        </div>
+    </footer>
 </body>
 </html>
