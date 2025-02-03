@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Restaurant Image Search</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+  <header class="bg-white shadow-md">
+    <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+      <h1 class="text-2xl font-bold text-gray-800">Search Restaurants by Food Image</h1>
+      <div class="space-x-4">
+        <a href="/" class="text-gray-600 hover:text-gray-900">Home</a>
+        <a href="/nearby-search" class="text-gray-600 hover:text-gray-900">Nearby Restaurants</a>
+        <a href="/image-search" class="text-gray-600 hover:text-gray-900">Image Search</a>
+        <a href="/restaurant-list" class="text-gray-600 hover:text-gray-900">All Restaurants</a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="container mx-auto px-6 py-8">
+    <section class="bg-white p-6 rounded-lg shadow-md">
+      <h2 class="text-2xl font-bold mb-4">Upload a Food Image</h2>
+      <form id="image-search-form" enctype="multipart/form-data" class="space-y-4">
+        <div>
+          <label for="image-upload" class="block mb-2">Upload Food Image</label>
+          <input type="file" id="image-upload" accept="image/*" required class="w-full px-3 py-2 border rounded">
+        </div>
+        <button type="submit" id="search-btn" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+          Search Restaurants
+        </button>
+      </form>
+
+      <!-- Loading and error messages -->
+      <div id="loading" class="hidden mt-4 text-gray-600">🔍 Searching for restaurants...</div>
+      <div id="error-message" class="hidden mt-6 text-red-600 font-semibold"></div>
+      
+      <!-- Detected cuisines -->
+      <div id="predicted-categories" class="mt-6 font-semibold text-gray-700"></div>
+
+      <!-- Results will be populated here -->
+      <div id="results" class="mt-6 grid md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      
+      <!-- Pagination controls -->
+      <div id="pagination-controls" class="mt-6 flex justify-center items-center space-x-4">
+        <button id="prev-page" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600" disabled>Previous</button>
+        <span id="page-info" class="text-gray-600">Page 1 of 1</span>
+        <button id="next-page" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600" disabled>Next</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+  
+    let currentPage = 1;
+    let totalPages = 1; 
+
+    const imageSearchForm = document.getElementById('image-search-form');
+    const loadingDiv = document.getElementById('loading');
+    const errorMessageDiv = document.getElementById('error-message');
+    const predictedCategoriesDiv = document.getElementById('predicted-categories');
+    const resultsDiv = document.getElementById('results');
+    const prevPageBtn = document.getElementById('prev-page');
+    const nextPageBtn = document.getElementById('next-page');
+    const pageInfoSpan = document.getElementById('page-info');
+
+    function displayPredictedCategories(categories) {
+      if (categories.length > 0) {
+        predictedCategoriesDiv.innerHTML = `🍽️ <strong>Detected Cuisine:</strong> ${categories.join(", ")}`;
+      } else {
+        predictedCategoriesDiv.innerHTML = `🍽️ No cuisine detected`;
+      }
+    }
+
+
+    function displayRestaurants(restaurants) {
+      resultsDiv.innerHTML = ""; 
+      restaurants.forEach((restaurant) => {
+        const div = document.createElement("div");
+        div.classList.add("bg-white", "p-4", "rounded-lg", "shadow-md");
+        div.innerHTML = `
+          <h3 class="text-lg font-bold">${restaurant.name}</h3>
+          <p class="text-gray-700"><strong>📍 Address:</strong> ${restaurant.address}</p>
+          <p class="text-gray-700"><strong>🍴 Cuisine:</strong> ${restaurant.cuisines}</p>
+          <p class="text-gray-700"><strong>⭐ Rating:</strong> ${restaurant.rating_text} (${restaurant.votes} votes)</p>
+        `;
+        resultsDiv.appendChild(div);
+      });
+    }
+
+    function updatePaginationControls(page, total) {
+      pageInfoSpan.textContent = `Page ${page} of ${total}`;
+      prevPageBtn.disabled = page <= 1;
+      nextPageBtn.disabled = page >= total;
+    }
+
+    async function fetchImageSearchResults(page) {
+      try {
+    
+        loadingDiv.classList.remove("hidden");
+        errorMessageDiv.classList.add("hidden");
+
+        const imageFile = document.getElementById('image-upload').files[0];
+        if (!imageFile) {
+          console.error("No image selected!");
+          return;
+        }
+        const formData = new FormData();
+        formData.append('image', imageFile);
+  
+        const response = await fetch(`/api/restaurants/search-by-image?page=${page}&limit=10`, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch restaurants. Server returned: " + response.status);
+        }
+
+        const data = await response.json();
+        console.log("Response JSON:", data);
+
+        loadingDiv.classList.add("hidden");
+
+        displayPredictedCategories(data.detected_cuisines);
+
+        if (data.restaurants && data.restaurants.length > 0) {
+          displayRestaurants(data.restaurants);
+  
+          currentPage = data.page || page;
+          totalPages = data.total_pages || 1;
+          updatePaginationControls(currentPage, totalPages);
+        } else {
+          resultsDiv.innerHTML = `<p class="text-gray-600">❌ No matching restaurants found.</p>`;
+          updatePaginationControls(1, 1);
+        }
+      } catch (error) {
+        console.error("Error fetching restaurants:", error);
+        loadingDiv.classList.add("hidden");
+        errorMessageDiv.classList.remove("hidden");
+        errorMessageDiv.textContent = "❌ Error: " + error.message;
+      }
+    }
+    imageSearchForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      currentPage = 1; 
+      fetchImageSearchResults(currentPage);
+    });
+    prevPageBtn.addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        fetchImageSearchResults(currentPage);
+      }
+    });
+    nextPageBtn.addEventListener('click', () => {
+      if (currentPage < totalPages) {
+        currentPage++;
+        fetchImageSearchResults(currentPage);
+      }
+    });
+
+    // Optionally, you could trigger an initial fetch if you want to display a default image or placeholder.
+    // fetchImageSearchResults(currentPage);
+  </script>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nearby Restaurants</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <header class="bg-white shadow-md">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-800">Nearby Restaurants</h1>
+            <div class="space-x-4">
+                <a href="/" class="text-gray-600 hover:text-gray-900">Home</a>
+                <a href="/nearby-search" class="text-gray-600 hover:text-gray-900">Nearby Restaurants</a>
+                <a href="/image-search" class="text-gray-600 hover:text-gray-900">Image Search</a>
+                <a href="/restaurant-list" class="text-gray-600 hover:text-gray-900">All Restaurants</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-6 py-8">
+        <section class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-bold mb-4">Find Restaurants Near You</h2>
+            <form id="nearby-search-form" class="space-y-4">
+                <div>
+                    <label for="latitude" class="block mb-2">Latitude</label>
+                    <input type="number" id="latitude" step="any" required class="w-full px-3 py-2 border rounded">
+                </div>
+                <div>
+                    <label for="longitude" class="block mb-2">Longitude</label>
+                    <input type="number" id="longitude" step="any" required class="w-full px-3 py-2 border rounded">
+                </div>
+                <div>
+                    <label for="radius" class="block mb-2">Search Radius (km)</label>
+                    <input type="number" id="radius" value="3" class="w-full px-3 py-2 border rounded">
+                </div>
+                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    Search Nearby Restaurants
+                </button>
+            </form>
+
+            <div id="results" class="mt-6 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Nearby restaurants will be dynamically populated here -->
+            </div>
+
+            <!-- Pagination controls -->
+            <div id="pagination-controls" class="mt-4 flex justify-between items-center">
+                <button id="prev-page" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600" disabled>Previous</button>
+                <span id="page-info" class="text-gray-600">Page 1 of 1</span>
+                <button id="next-page" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600" disabled>Next</button>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        let currentPage = 1;
+        const limit = 9; 
+        let totalPages = 1; 
+
+        const resultsContainer = document.getElementById('results');
+        const pageInfo = document.getElementById('page-info');
+        const prevPageBtn = document.getElementById('prev-page');
+        const nextPageBtn = document.getElementById('next-page');
+
+        async function fetchNearbyRestaurants(page) {
+            const lat = document.getElementById('latitude').value;
+            const lon = document.getElementById('longitude').value;
+            const radius = document.getElementById('radius').value;
+
+            try {
+                const response = await fetch(`/api/restaurants/nearby?lat=${lat}&lon=${lon}&radius=${radius}&page=${page}&limit=${limit}`);
+                const data = await response.json();
+
+                if (data.restaurants) {
+                    
+                    resultsContainer.innerHTML = data.restaurants.map(restaurant => `
+                        <div class="bg-white p-4 rounded-lg shadow">
+                            <h3 class="font-bold text-lg">${restaurant.name}</h3>
+                            <p>Distance: ${restaurant.distance} km</p>
+                            <p>Cuisine: ${restaurant.cuisines}</p>
+                            <a href="/restaurant/${restaurant.restaurant_id}" class="text-blue-500 hover:underline">
+                                View Details
+                            </a>
+                        </div>
+                    `).join('');
+
+                    totalPages = data.total_pages; 
+                    pageInfo.textContent = `Page ${page} of ${totalPages}`;
+            
+                    prevPageBtn.disabled = page === 1;
+                    prevPageBtn.classList.toggle('opacity-50', page === 1);
+                    
+                    nextPageBtn.disabled = page === totalPages;
+                    nextPageBtn.classList.toggle('opacity-50', page === totalPages);
+                } else {
+                    resultsContainer.innerHTML = `<p class="text-red-500">Error fetching nearby restaurants.</p>`;
+                }
+            } catch (error) {
+                resultsContainer.innerHTML = `<p class="text-red-500">Error: ${error.message}</p>`;
+            }
+        }
+
+        document.getElementById('nearby-search-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            currentPage = 1; 
+            fetchNearbyRestaurants(currentPage);
+        });
+
+        prevPageBtn.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                fetchNearbyRestaurants(currentPage);
+            }
+        });
+        nextPageBtn.addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                currentPage++;
+                fetchNearbyRestaurants(currentPage);
+            }
+        });
+        fetchNearbyRestaurants(currentPage);
+    </script>
+</body>
+</html>

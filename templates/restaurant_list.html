@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Restaurants</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <header class="bg-white shadow-md">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-800">All Restaurants</h1>
+            <div class="space-x-4">
+                <a href="/" class="text-gray-600 hover:text-gray-900">Home</a>
+                <a href="/nearby-search" class="text-gray-600 hover:text-gray-900">Nearby Restaurants</a>
+                <a href="/image-search" class="text-gray-600 hover:text-gray-900">Image Search</a>
+                <a href="/restaurant-list" class="text-gray-600 hover:text-gray-900">All Restaurants</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-6 py-8">
+        <section class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-bold mb-4">Restaurant Directory</h2>
+            
+            <div class="mb-4 flex justify-between items-center">
+                <div class="flex space-x-2">
+                    <button id="prev-page" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">
+                        Previous
+                    </button>
+                    <button id="next-page" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">
+                        Next
+                    </button>
+                </div>
+                <div id="page-info" class="text-gray-600">
+                    Page 1 of 1
+                </div>
+            </div>
+
+            <div id="restaurants-container" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Restaurants will be dynamically populated here -->
+            </div>
+        </section>
+    </main>
+
+    <script>
+        let currentPage = 1;
+        let totalPages = 1; 
+        const limit = 9; 
+        const restaurantsContainer = document.getElementById('restaurants-container');
+        const pageInfo = document.getElementById('page-info');
+        const prevPageBtn = document.getElementById('prev-page');
+        const nextPageBtn = document.getElementById('next-page');
+
+        async function fetchRestaurants(page) {
+            try {
+                const response = await fetch(`/api/restaurants?page=${page}&limit=${limit}`);
+                const data = await response.json();
+
+                if (data.restaurants) {
+                
+                    restaurantsContainer.innerHTML = data.restaurants.map(restaurant => `
+                        <div class="bg-white p-4 rounded-lg shadow">
+                            <h3 class="font-bold text-lg">${restaurant.name}</h3>
+                            <p>Cuisine: ${restaurant.cuisines}</p>
+                            <p>Location: ${restaurant.city}, ${restaurant.country}</p>
+                            <a href="/restaurant/${restaurant.restaurant_id}" class="text-blue-500 hover:underline">
+                                View Details
+                            </a>
+                        </div>
+                    `).join('');
+                    totalPages = data.total_pages || 1; 
+                    pageInfo.textContent = `Page ${page} of ${totalPages}`;
+                    
+                    prevPageBtn.disabled = page === 1;
+                    prevPageBtn.classList.toggle('opacity-50', page === 1);
+                    
+                    nextPageBtn.disabled = page === totalPages;
+                    nextPageBtn.classList.toggle('opacity-50', page === totalPages);
+                } else {
+                    restaurantsContainer.innerHTML = `
+                        <p class="text-red-500 col-span-full">
+                            Error loading restaurants: No data available.
+                        </p>
+                    `;
+                }
+            } catch (error) {
+                restaurantsContainer.innerHTML = `
+                    <p class="text-red-500 col-span-full">
+                        Error loading restaurants: ${error.message}
+                    </p>
+                `;
+            }
+        }
+
+        fetchRestaurants(currentPage);
+        prevPageBtn.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                fetchRestaurants(currentPage);
+            }
+        });
+
+        nextPageBtn.addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                currentPage++;
+                fetchRestaurants(currentPage);
+            }
+        });
+    </script>
+</body>
+</html>
