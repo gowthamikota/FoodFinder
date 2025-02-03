@@ -103,45 +103,66 @@ def get_restaurant_by_id(restaurant_id):
 
 @app.route("/api/restaurants", methods=['GET'])
 def get_restaurants():
-    page = int(request.args.get("page", 1))
-    limit = int(request.args.get("limit", 10))
-    offset = (page - 1) * limit
+    page = int(request.args.get("page", 1))  # Get the page number from query string
+    limit = int(request.args.get("limit", 10))  # Get the limit (items per page)
+    offset = (page - 1) * limit  # Calculate offset for pagination
+
     response = supabase.table("restaurants").select("*").range(offset, offset + limit - 1).execute()
+
+    # Get total count for pagination
+    total_count_response = supabase.table("restaurants").select("restaurant_id").execute()
+    total_count = len(total_count_response.data)
+    total_pages = math.ceil(total_count / limit)
+
     if response.data:
-        return jsonify(response.data), 200
+        return jsonify({
+            "restaurants": response.data,
+            "page": page,
+            "total_pages": total_pages,
+            "total_count": total_count
+        }), 200
     else:
         return jsonify({"error": "No restaurants found"}), 404
+
 
 @app.route("/api/restaurants/nearby", methods=['GET'])
 def get_nearby_restaurants():
     try:
         lat = float(request.args.get("lat"))
         lon = float(request.args.get("lon"))
-        radius = float(request.args.get("radius", 3))
+        radius = float(request.args.get("radius", 3)) 
+        page = int(request.args.get("page", 1))  # Get page number from request
+        limit = int(request.args.get("limit", 9))  # Get limit (items per page)
+        offset = (page - 1) * limit
+
         response = supabase.table("restaurants").select("*").execute()
+        
         nearby_restaurants = []
         for restaurant in response.data:
-            try:
-                rest_lat = float(restaurant.get("latitude", 0))
-                rest_lon = float(restaurant.get("longitude", 0))
-                distance = calculate_distance(lat, lon, rest_lat, rest_lon)
-                if distance <= radius:
-                    restaurant["distance"] = round(distance, 2)
-                    nearby_restaurants.append(restaurant)
-            except Exception as inner_e:
-                print(f"Error processing restaurant {restaurant.get('restaurant_id', 'unknown')}: {inner_e}")
-        return jsonify(nearby_restaurants), 200
+            rest_lat = float(restaurant.get("latitude", 0))
+            rest_lon = float(restaurant.get("longitude", 0))
+            distance = calculate_distance(lat, lon, rest_lat, rest_lon)
+            if distance <= radius:
+                restaurant["distance"] = round(distance, 2)
+                nearby_restaurants.append(restaurant)
+
+        total_count = len(nearby_restaurants)
+        total_pages = math.ceil(total_count / limit)
+        paginated_restaurants = nearby_restaurants[offset:offset + limit]
+
+        return jsonify({
+            "restaurants": paginated_restaurants,
+            "total_pages": total_pages
+        }), 200
     except Exception as e:
-        print("Error in get_nearby_restaurants:")
-        traceback.print_exc()
         return jsonify({"error": str(e)}), 400
+
 
 @app.route("/api/restaurants/search-by-image", methods=['POST'])
 def search_restaurants_by_image():
     try:
         if 'image' not in request.files:
             return jsonify({"error": "No image file provided"}), 400
-
         file = request.files['image']
         if not allowed_file(file.filename):
             return jsonify({"error": "Invalid file type"}), 400
@@ -163,14 +184,25 @@ def search_restaurants_by_image():
             restaurant_cuisines = [c.strip().lower() for c in cuisines_str.split(",") if c.strip()]
             if any(c in restaurant_cuisines for c in detected_cuisines):
                 matching_restaurants.append(restaurant)
+        page = int(request.args.get("page", 1))
+        limit = int(request.args.get("limit", 9))
+        offset = (page - 1) * limit
+        total_matches = len(matching_restaurants)
+        total_pages = math.ceil(total_matches / limit)
+        paginated_restaurants = matching_restaurants[offset:offset + limit]
+
         return jsonify({
             "status": "success",
             "detected_cuisines": list(detected_cuisines),
-            "restaurants": matching_restaurants
+            "restaurants": paginated_restaurants,
+            "page": page,
+            "total_pages": total_pages
         }), 200
+
     except Exception as e:
         print("Exception in search_restaurants_by_image:")
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+    
 if __name__ == "__main__":
     app.run(debug=True)
