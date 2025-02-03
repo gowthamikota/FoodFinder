@@ -103,13 +103,11 @@ def get_restaurant_by_id(restaurant_id):
 
 @app.route("/api/restaurants", methods=['GET'])
 def get_restaurants():
-    page = int(request.args.get("page", 1))  # Get the page number from query string
-    limit = int(request.args.get("limit", 10))  # Get the limit (items per page)
-    offset = (page - 1) * limit  # Calculate offset for pagination
-
+    page = int(request.args.get("page", 1))  
+    limit = int(request.args.get("limit", 10))  
+    offset = (page - 1) * limit  
     response = supabase.table("restaurants").select("*").range(offset, offset + limit - 1).execute()
 
-    # Get total count for pagination
     total_count_response = supabase.table("restaurants").select("restaurant_id").execute()
     total_count = len(total_count_response.data)
     total_pages = math.ceil(total_count / limit)
@@ -131,8 +129,8 @@ def get_nearby_restaurants():
         lat = float(request.args.get("lat"))
         lon = float(request.args.get("lon"))
         radius = float(request.args.get("radius", 3)) 
-        page = int(request.args.get("page", 1))  # Get page number from request
-        limit = int(request.args.get("limit", 9))  # Get limit (items per page)
+        page = int(request.args.get("page", 1))  
+        limit = int(request.args.get("limit", 9))  
         offset = (page - 1) * limit
 
         response = supabase.table("restaurants").select("*").execute()
