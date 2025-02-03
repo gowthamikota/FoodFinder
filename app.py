@@ -1,36 +1,98 @@
-# app.py
 from flask import Flask, jsonify, request, render_template
 from supabase import create_client, Client
-import os
-from PIL import Image
-import numpy as np
-from tensorflow.keras.applications import ResNet50
-from tensorflow.keras.applications.resnet import preprocess_input
+from dotenv import load_dotenv
+import tensorflow as tf
+from tensorflow.keras.applications.mobilenet_v2 import preprocess_input, decode_predictions
 from tensorflow.keras.preprocessing import image
-import math
+import os,math,traceback
 
-SUPABASE_URL = "https://lkhzioqqokpxuhchqunz.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxraHppb3Fxb2tweHVoY2hxdW56Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg0NzAzNzcsImV4cCI6MjA1NDA0NjM3N30.4e560s7bmSy1d_TGUv70CJm9KjwLB-ERdzbbgw9dxFk"
+load_dotenv()
+
+# Supabase configuration
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
 app = Flask(__name__)
 
-# ResNet model for image recognition
-model = ResNet50(weights='imagenet')
+# Load MobileNetV2 for image classification 
+model = tf.keras.applications.MobileNetV2(weights="imagenet")
+# Food to Cuisine Mapping
+cusineMapping = {
+    'pizza': ['Italian', 'American'],
+    'hamburger': ['American', 'Fast Food'],
+    'ice cream': ['Desserts', 'Ice Cream'],
+    'pasta': ['Italian', 'Continental'],
+    'sushi': ['Japanese', 'Asian'],
+    'curry': ['Indian', 'Thai', 'Asian'],
+    'noodles': ['Chinese', 'Asian', 'Thai'],
+    'sandwich': ['American', 'Fast Food'],
+    'cake': ['Desserts', 'Bakery'],
+    'salad': ['Healthy Food', 'Continental']
+}
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+def load_image_classification_model():
+    return model
+def process_image(image_path):
+    try:
+        model_instance = load_image_classification_model()
+        img = tf.keras.preprocessing.image.load_img(image_path, target_size=(224, 224))
+        img_array = tf.keras.preprocessing.image.img_to_array(img)
+        img_array = tf.expand_dims(img_array, 0)
+        img_array = tf.keras.applications.mobilenet_v2.preprocess_input(img_array)
+        predictions = model_instance.predict(img_array)
+        decoded_predictions = tf.keras.applications.mobilenet_v2.decode_predictions(predictions)
+        food_items = []
+        for pred in decoded_predictions[0]:
+            class_name = pred[1].lower().replace('_', ' ')
+            confidence = float(pred[2])
+            for food_key in cusineMapping.keys():
+                if food_key in class_name:
+                    food_items.append({
+                        'name': food_key,
+                        'confidence': confidence,
+                        'cuisines': cusineMapping[food_key]
+                    })
+                    break
+        return food_items
+    except Exception as e:
+        print("Error in process_image:")
+        traceback.print_exc()
+        return []
 
 def calculate_distance(lat1, lon1, lat2, lon2):
-    R = 6371  
+    R = 6371  # Radius of Earth in km
     lat1_rad = math.radians(lat1)
     lon1_rad = math.radians(lon1)
     lat2_rad = math.radians(lat2)
     lon2_rad = math.radians(lon2)
-    dlon = lon2_rad - lon1_rad
     dlat = lat2_rad - lat1_rad
-    a = math.sin(dlat/2)**2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon/2)**2
+    dlon = lon2_rad - lon1_rad
+    #haversine formula
+    a = math.sin(dlat / 2) ** 2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2) ** 2
     c = 2 * math.asin(math.sqrt(a))
-    distance = R * c
-    return distance
+    return R * c
 
-#to get restaurant by using its id
+#html templates
+@app.route("/")
+def home():
+    return render_template("index.html")
+@app.route("/nearby-search")
+def nearby_search():
+    return render_template("nearby_search.html")
+@app.route("/image-search")
+def image_search():
+    return render_template("image_search.html")
+@app.route("/restaurant-list")
+def restaurant_list():
+    return render_template("restaurant_list.html")
+@app.route("/restaurant/<int:restaurant_id>")
+def restaurant_detail(restaurant_id):
+    return render_template("restaurant_detail.html", restaurant_id=restaurant_id)
+
+#api end points
 @app.route("/api/restaurant/<int:restaurant_id>", methods=["GET"])
 def get_restaurant_by_id(restaurant_id):
     response = supabase.table("restaurants").select("*").eq("restaurant_id", restaurant_id).execute()
@@ -38,8 +100,7 @@ def get_restaurant_by_id(restaurant_id):
         return jsonify(response.data[0]), 200
     else:
         return jsonify({"error": "Restaurant not found"}), 404
-    
-#to get list of restaurants with pagination
+
 @app.route("/api/restaurants", methods=['GET'])
 def get_restaurants():
     page = int(request.args.get("page", 1))
@@ -50,65 +111,66 @@ def get_restaurants():
         return jsonify(response.data), 200
     else:
         return jsonify({"error": "No restaurants found"}), 404
-    
-#to get nearby restaurants
+
 @app.route("/api/restaurants/nearby", methods=['GET'])
 def get_nearby_restaurants():
     try:
         lat = float(request.args.get("lat"))
         lon = float(request.args.get("lon"))
-        radius = float(request.args.get("radius", 3)) 
-        response = supabase.table("restaurants").select("*").execute() 
+        radius = float(request.args.get("radius", 3))
+        response = supabase.table("restaurants").select("*").execute()
         nearby_restaurants = []
         for restaurant in response.data:
-            rest_lat = float(restaurant.get("latitude", 0))
-            rest_lon = float(restaurant.get("longitude", 0))  
-            distance = calculate_distance(lat, lon, rest_lat, rest_lon) 
-            if distance <= radius:
-                restaurant["distance"] = round(distance, 2)
-                nearby_restaurants.append(restaurant)
+            try:
+                rest_lat = float(restaurant.get("latitude", 0))
+                rest_lon = float(restaurant.get("longitude", 0))
+                distance = calculate_distance(lat, lon, rest_lat, rest_lon)
+                if distance <= radius:
+                    restaurant["distance"] = round(distance, 2)
+                    nearby_restaurants.append(restaurant)
+            except Exception as inner_e:
+                print(f"Error processing restaurant {restaurant.get('restaurant_id', 'unknown')}: {inner_e}")
         return jsonify(nearby_restaurants), 200
     except Exception as e:
+        print("Error in get_nearby_restaurants:")
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 400
-    
-#to search restaurants by image of food
+
 @app.route("/api/restaurants/search-by-image", methods=['POST'])
 def search_restaurants_by_image():
     try:
         if 'image' not in request.files:
-            return jsonify({"error": "No image file provided"}), 400 
+            return jsonify({"error": "No image file provided"}), 400
+
         file = request.files['image']
-        img = Image.open(file)
-        img = img.resize((224, 224))
-        img_array = image.img_to_array(img)
-        img_array = np.expand_dims(img_array, axis=0)
-        img_array = preprocess_input(img_array)
-        predictions = model.predict(img_array)
-        from tensorflow.keras.applications.resnet50 import decode_predictions
-        decoded_predictions = decode_predictions(predictions, top=3)[0]
-        food_categories = [pred[1].lower() for pred in decoded_predictions]
+        if not allowed_file(file.filename):
+            return jsonify({"error": "Invalid file type"}), 400
+        img_path = "temp_image.jpg"
+        file.save(img_path)
+        food_items = process_image(img_path)
+        if not food_items:
+            return jsonify({"error": "Could not determine cuisine from image"}), 404
+        detected_cuisines = set()
+        for item in food_items:
+            for cuisine in item.get('cuisines', []):
+                detected_cuisines.add(cuisine.lower().strip())
         response = supabase.table("restaurants").select("*").execute()
+        if not response.data:
+            return jsonify({"error": "No restaurants found in the database"}), 404
         matching_restaurants = []
         for restaurant in response.data:
-            cuisines = restaurant.get("cuisines", "").lower()
-            if any(category in cuisines for category in food_categories):
+            cuisines_str = restaurant.get("cuisines") or ""
+            restaurant_cuisines = [c.strip().lower() for c in cuisines_str.split(",") if c.strip()]
+            if any(c in restaurant_cuisines for c in detected_cuisines):
                 matching_restaurants.append(restaurant)
-        
-        return jsonify(matching_restaurants), 200
+        return jsonify({
+            "status": "success",
+            "detected_cuisines": list(detected_cuisines),
+            "restaurants": matching_restaurants
+        }), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
-
-@app.route("/")
-def home():
-    return render_template("index.html")
-
-@app.route("/restaurant/<int:restaurant_id>")
-def restaurant_detail(restaurant_id):
-    return render_template("restaurant_detail.html", restaurant_id=restaurant_id)
-
+        print("Exception in search_restaurants_by_image:")
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
 if __name__ == "__main__":
     app.run(debug=True)
-
-
-
-
