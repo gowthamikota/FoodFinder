@@ -125,34 +125,69 @@ def get_restaurant_by_id(restaurant_id):
 
 @app.route("/api/restaurants", methods=['GET'])
 def get_restaurants():
-    page = int(request.args.get("page", 1))
-    limit = int(request.args.get("limit", 9))  
-    offset = (page - 1) * limit
-    country_code = request.args.get("country_code", type=int)  
-    query = supabase.table("restaurants").select("*")
-    if country_code:
-        query = query.eq("country", country_code)  
-    total_count_query = supabase.table("restaurants").select("restaurant_id")
-    if country_code:
-        total_count_query = total_count_query.eq("country", country_code)
-    total_count_response = total_count_query.execute()
-    total_count = len(total_count_response.data)
-    total_pages = math.ceil(total_count / limit)
-    response = query.range(offset, offset + limit - 1).execute()
-    print(f"Querying restaurants with filters: Country={country_code}")
-    print("Fetched Restaurants:", response.data)
-    if response.data:
-        return jsonify({
-            "restaurants": response.data,
-            "page": page,
-            "total_pages": total_pages,
-            "total_count": total_count
-        }), 200
-    else:
-        return jsonify({"error": "No restaurants found"}), 404
+    try:
+        # Pagination parameters
+        page = int(request.args.get("page", 1))
+        limit = int(request.args.get("limit", 9))
+        offset = (page - 1) * limit
 
+        # Filter parameters
+        search_query = request.args.get("search", '').strip()
+        avg_cost_raw = request.args.get("avg_cost")
 
+        # Convert avg cost to integer
+        try:
+            avg_cost = int(float(avg_cost_raw)) if avg_cost_raw else None
+        except ValueError:
+            return jsonify({"error": "Invalid average cost value"}), 400
 
+        # Build the base query
+        query = supabase.table("restaurants").select("*")
+        count_query = supabase.table("restaurants").select("restaurant_id")
+
+        # Apply filters
+        if search_query:
+            # Use ILIKE for case-insensitive search across multiple columns
+            search_term = f"%{search_query}%"
+            query = query.ilike("name", search_term)
+            count_query = count_query.ilike("name", search_term)
+
+        if avg_cost is not None:
+            query = query.lte("average_cost_for_two", avg_cost)
+            count_query = count_query.lte("average_cost_for_two", avg_cost)
+
+        # Get total count for pagination
+        count_response = count_query.execute()
+        total_count = len(count_response.data)
+        total_pages = max(1, -(-total_count // limit))  # Ceiling division
+
+        # Get paginated results
+        query = query.range(offset, offset + limit - 1)
+        response = query.execute()
+
+        print(f"[DEBUG] Search query: {search_query}")
+        print(f"[DEBUG] Query response: {response.data}")
+
+        if response.data:
+            return jsonify({
+                "restaurants": response.data,
+                "page": page,
+                "total_pages": total_pages,
+                "total_count": total_count
+            }), 200
+        else:
+            return jsonify({
+                "restaurants": [],
+                "page": page,
+                "total_pages": 0,
+                "total_count": 0,
+                "message": "No restaurants found"
+            }), 200
+
+    except Exception as e:
+        print("[ERROR] API Failure:", str(e))
+        print(traceback.format_exc())
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
 
 @app.route("/api/restaurants/nearby", methods=['GET'])
 def get_nearby_restaurants():
