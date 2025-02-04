@@ -123,31 +123,29 @@ def get_restaurant_by_id(restaurant_id):
     else:
         return jsonify({"error": "Restaurant not found"}), 404
 
+
+
 @app.route("/api/restaurants", methods=['GET'])
 def get_restaurants():
     try:
-        # Pagination parameters
         page = int(request.args.get("page", 1))
         limit = int(request.args.get("limit", 9))
         offset = (page - 1) * limit
-
-        # Filter parameters
+        country_code = request.args.get("country_code", type=int)
+        cuisines = request.args.get("cuisines")
         search_query = request.args.get("search", '').strip()
         avg_cost_raw = request.args.get("avg_cost")
-
-        # Convert avg cost to integer
         try:
             avg_cost = int(float(avg_cost_raw)) if avg_cost_raw else None
         except ValueError:
             return jsonify({"error": "Invalid average cost value"}), 400
-
-        # Build the base query
         query = supabase.table("restaurants").select("*")
         count_query = supabase.table("restaurants").select("restaurant_id")
+        if country_code:
+            query = query.eq("country", country_code)
+            count_query = count_query.eq("country", country_code)
 
-        # Apply filters
         if search_query:
-            # Use ILIKE for case-insensitive search across multiple columns
             search_term = f"%{search_query}%"
             query = query.ilike("name", search_term)
             count_query = count_query.ilike("name", search_term)
@@ -156,12 +154,14 @@ def get_restaurants():
             query = query.lte("average_cost_for_two", avg_cost)
             count_query = count_query.lte("average_cost_for_two", avg_cost)
 
-        # Get total count for pagination
+        if cuisines:
+            cuisines_list = [cuisine.strip().lower() for cuisine in cuisines.split(',')]
+            for cuisine in cuisines_list:
+                query = query.ilike("cuisines", f"%{cuisine}%")
+                count_query = count_query.ilike("cuisines", f"%{cuisine}%")
         count_response = count_query.execute()
         total_count = len(count_response.data)
-        total_pages = max(1, -(-total_count // limit))  # Ceiling division
-
-        # Get paginated results
+        total_pages = max(1, -(-total_count // limit))  
         query = query.range(offset, offset + limit - 1)
         response = query.execute()
 
@@ -269,3 +269,5 @@ def search_restaurants_by_image():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+
