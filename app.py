@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import tensorflow as tf
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input, decode_predictions
 from tensorflow.keras.preprocessing import image
-import os,math,traceback
+import os, math, traceback
 
 load_dotenv()
 
@@ -17,6 +17,7 @@ app = Flask(__name__)
 
 # Load MobileNetV2 for image classification 
 model = tf.keras.applications.MobileNetV2(weights="imagenet")
+
 # Food to Cuisine Mapping
 cusineMapping = {
     'pizza': ['Italian', 'American'],
@@ -30,11 +31,33 @@ cusineMapping = {
     'cake': ['Desserts', 'Bakery'],
     'salad': ['Healthy Food', 'Continental']
 }
+
+# Country Code to Country Name mapping
+country_mapping = {
+    1: "India",
+    14: "Australia",
+    30: "Brazil",
+    37: "Canada",
+    94: "Indonesia",
+    148: "New Zealand",
+    162: "Phillipines",
+    166: "Qatar",
+    184: "Singapore",
+    189: "South Africa",
+    191: "Sri Lanka",
+    208: "Turkey",
+    214: "UAE",
+    215: "United Kingdom",
+    216: "United States"
+}
+
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 def load_image_classification_model():
     return model
+
 def process_image(image_path):
     try:
         model_instance = load_image_classification_model()
@@ -70,12 +93,11 @@ def calculate_distance(lat1, lon1, lat2, lon2):
     lon2_rad = math.radians(lon2)
     dlat = lat2_rad - lat1_rad
     dlon = lon2_rad - lon1_rad
-    #haversine formula
     a = math.sin(dlat / 2) ** 2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2) ** 2
     c = 2 * math.asin(math.sqrt(a))
     return R * c
 
-#html templates
+# HTML templates
 @app.route("/")
 def home():
     return render_template("index.html")
@@ -92,7 +114,7 @@ def restaurant_list():
 def restaurant_detail(restaurant_id):
     return render_template("restaurant_detail.html", restaurant_id=restaurant_id)
 
-#api end points
+# API Endpoints
 @app.route("/api/restaurant/<int:restaurant_id>", methods=["GET"])
 def get_restaurant_by_id(restaurant_id):
     response = supabase.table("restaurants").select("*").eq("restaurant_id", restaurant_id).execute()
@@ -103,15 +125,22 @@ def get_restaurant_by_id(restaurant_id):
 
 @app.route("/api/restaurants", methods=['GET'])
 def get_restaurants():
-    page = int(request.args.get("page", 1))  
-    limit = int(request.args.get("limit", 10))  
-    offset = (page - 1) * limit  
-    response = supabase.table("restaurants").select("*").range(offset, offset + limit - 1).execute()
-
-    total_count_response = supabase.table("restaurants").select("restaurant_id").execute()
+    page = int(request.args.get("page", 1))
+    limit = int(request.args.get("limit", 9))  
+    offset = (page - 1) * limit
+    country_code = request.args.get("country_code", type=int)  
+    query = supabase.table("restaurants").select("*")
+    if country_code:
+        query = query.eq("country", country_code)  
+    total_count_query = supabase.table("restaurants").select("restaurant_id")
+    if country_code:
+        total_count_query = total_count_query.eq("country", country_code)
+    total_count_response = total_count_query.execute()
     total_count = len(total_count_response.data)
     total_pages = math.ceil(total_count / limit)
-
+    response = query.range(offset, offset + limit - 1).execute()
+    print(f"Querying restaurants with filters: Country={country_code}")
+    print("Fetched Restaurants:", response.data)
     if response.data:
         return jsonify({
             "restaurants": response.data,
@@ -123,18 +152,20 @@ def get_restaurants():
         return jsonify({"error": "No restaurants found"}), 404
 
 
+
+
 @app.route("/api/restaurants/nearby", methods=['GET'])
 def get_nearby_restaurants():
     try:
         lat = float(request.args.get("lat"))
         lon = float(request.args.get("lon"))
-        radius = float(request.args.get("radius", 3)) 
-        page = int(request.args.get("page", 1))  
-        limit = int(request.args.get("limit", 9))  
+        radius = float(request.args.get("radius", 3))
+        page = int(request.args.get("page", 1))
+        limit = int(request.args.get("limit", 9))
         offset = (page - 1) * limit
 
         response = supabase.table("restaurants").select("*").execute()
-        
+
         nearby_restaurants = []
         for restaurant in response.data:
             rest_lat = float(restaurant.get("latitude", 0))
@@ -154,7 +185,6 @@ def get_nearby_restaurants():
         }), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400
-
 
 @app.route("/api/restaurants/search-by-image", methods=['POST'])
 def search_restaurants_by_image():
@@ -201,6 +231,6 @@ def search_restaurants_by_image():
         print("Exception in search_restaurants_by_image:")
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
-    
+
 if __name__ == "__main__":
     app.run(debug=True)
