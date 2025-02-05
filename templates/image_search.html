@@ -3,56 +3,240 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Restaurant Image Search</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>FoodFinder Image Search</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary-red: #E23744;
+      --secondary-red: #CB202D;
+      --text-dark: #1C1C1C;
+      --text-light: #696969;
+      --background-gray: #F8F8F8;
+      --white: #FFFFFF;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--background-gray);
+      color: var(--text-dark);
+      line-height: 1.6;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    header {
+      background: var(--white);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 0;
+    }
+
+    nav h1 {
+      font-size: 24px;
+      color: var(--primary-red);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 25px;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: var(--text-dark);
+      font-weight: 500;
+      transition: color 0.3s;
+    }
+
+    .nav-links a:hover {
+      color: var(--primary-red);
+    }
+
+    .search-section {
+      background: var(--white);
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      padding: 30px;
+      max-width: 800px;
+      margin: 40px auto;
+    }
+
+    .search-section h2 {
+      color: var(--text-dark);
+      margin-bottom: 20px;
+      text-align: center;
+      font-size: 24px;
+    }
+
+    #image-upload {
+      border: 2px dashed var(--primary-red);
+      padding: 20px;
+      text-align: center;
+      transition: border-color 0.3s;
+      border-radius: 6px;
+      margin-bottom: 20px;
+    }
+
+    #image-upload:hover {
+      border-color: var(--secondary-red);
+    }
+
+    #search-btn {
+      background: var(--primary-red);
+      color: var(--white);
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s;
+      font-weight: 500;
+      width: 100%;
+    }
+
+    #search-btn:hover {
+      background: var(--secondary-red);
+    }
+
+    #predicted-categories {
+      background: rgba(226, 55, 68, 0.1);
+      padding: 15px;
+      border-radius: 6px;
+      margin: 20px 0;
+      color: var(--text-dark);
+    }
+
+    #results {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-top: 30px;
+    }
+
+    .restaurant-card {
+      background: var(--white);
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      padding: 20px;
+      transition: transform 0.3s;
+    }
+
+    .restaurant-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .restaurant-card h3 {
+      color: var(--text-dark);
+      margin-bottom: 12px;
+      font-size: 18px;
+    }
+
+    .restaurant-card p {
+      color: var(--text-light);
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    #pagination-controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      margin-top: 30px;
+    }
+
+    #pagination-controls button {
+      background: var(--primary-red);
+      color: var(--white);
+      border: none;
+      padding: 8px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s;
+      font-weight: 500;
+    }
+
+    #pagination-controls button:disabled {
+      background: var(--text-light);
+      cursor: not-allowed;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #loading, #error-message {
+      text-align: center;
+      padding: 15px;
+      margin-top: 20px;
+      border-radius: 6px;
+    }
+
+    #error-message {
+      background: rgba(226, 55, 68, 0.1);
+      color: var(--primary-red);
+    }
+  </style>
 </head>
-<body class="bg-gray-100">
-  <header class="bg-white shadow-md">
-    <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
-      <h1 class="text-2xl font-bold text-gray-800">Search Restaurants by Food Image</h1>
-      <div class="space-x-4">
-        <a href="/" class="text-gray-600 hover:text-gray-900">Home</a>
-        <a href="/nearby-search" class="text-gray-600 hover:text-gray-900">Nearby Restaurants</a>
-        <a href="/image-search" class="text-gray-600 hover:text-gray-900">Image Search</a>
-        <a href="/restaurant-list" class="text-gray-600 hover:text-gray-900">All Restaurants</a>
+<body>
+  <header>
+    <nav class="container">
+      <h1><i class="fas fa-camera"></i> Search by Food Image</h1>
+      <div class="nav-links">
+        <div class="nav-links">    
+        <a href="/"><i class="fas fa-home"></i>Home</a>
+        <a href="/nearby-search"><i class="fas fa-motorcycle"></i>Search nearby</a>
+        <a href="/image-search"><i class="fas fa-camera"></i>Image search</a>
+        <a href="/restaurant-list"><i class="fas fa-utensils"></i>All restaurants</a>
       </div>
     </nav>
   </header>
 
-  <main class="container mx-auto px-6 py-8">
-    <section class="bg-white p-6 rounded-lg shadow-md">
-      <h2 class="text-2xl font-bold mb-4">Upload a Food Image</h2>
-      <form id="image-search-form" enctype="multipart/form-data" class="space-y-4">
+  <main class="container">
+    <section class="search-section">
+      <h2>Find Restaurants by Food Image</h2>
+      <form id="image-search-form" enctype="multipart/form-data">
         <div>
-          <label for="image-upload" class="block mb-2">Upload Food Image</label>
-          <input type="file" id="image-upload" accept="image/*" required class="w-full px-3 py-2 border rounded">
+          <input type="file" id="image-upload" accept="image/*" required>
         </div>
-        <button type="submit" id="search-btn" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
-          Search Restaurants
-        </button>
+        <button type="submit" id="search-btn">Search Restaurants</button>
       </form>
 
-      <!-- Loading and error messages -->
-      <div id="loading" class="hidden mt-4 text-gray-600">🔍 Searching for restaurants...</div>
-      <div id="error-message" class="hidden mt-6 text-red-600 font-semibold"></div>
+      <div id="loading" class="hidden">🔍 Searching for restaurants...</div>
+      <div id="error-message" class="hidden"></div>
+      <div id="predicted-categories"></div>
+      <div id="results"></div>
       
-      <!-- Detected cuisines -->
-      <div id="predicted-categories" class="mt-6 font-semibold text-gray-700"></div>
-
-      <!-- Results will be populated here -->
-      <div id="results" class="mt-6 grid md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-      
-      <!-- Pagination controls -->
-      <div id="pagination-controls" class="mt-6 flex justify-center items-center space-x-4">
-        <button id="prev-page" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600" disabled>Previous</button>
-        <span id="page-info" class="text-gray-600">Page 1 of 1</span>
-        <button id="next-page" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600" disabled>Next</button>
+      <div id="pagination-controls">
+        <button id="prev-page" disabled>Previous</button>
+        <span id="page-info">Page 1 of 1</span>
+        <button id="next-page" disabled>Next</button>
       </div>
     </section>
   </main>
 
   <script>
-  
     let currentPage = 1;
     let totalPages = 1; 
 
@@ -73,17 +257,16 @@
       }
     }
 
-
     function displayRestaurants(restaurants) {
       resultsDiv.innerHTML = ""; 
       restaurants.forEach((restaurant) => {
         const div = document.createElement("div");
-        div.classList.add("bg-white", "p-4", "rounded-lg", "shadow-md");
+        div.classList.add("restaurant-card");
         div.innerHTML = `
-          <h3 class="text-lg font-bold">${restaurant.name}</h3>
-          <p class="text-gray-700"><strong>📍 Address:</strong> ${restaurant.address}</p>
-          <p class="text-gray-700"><strong>🍴 Cuisine:</strong> ${restaurant.cuisines}</p>
-          <p class="text-gray-700"><strong>⭐ Rating:</strong> ${restaurant.rating_text} (${restaurant.votes} votes)</p>
+          <h3>${restaurant.name}</h3>
+          <p><strong>📍 Address:</strong> ${restaurant.address}</p>
+          <p><strong>🍴 Cuisine:</strong> ${restaurant.cuisines}</p>
+          <p><strong>⭐ Rating:</strong> ${restaurant.rating_text} (${restaurant.votes} votes)</p>
         `;
         resultsDiv.appendChild(div);
       });
@@ -97,14 +280,12 @@
 
     async function fetchImageSearchResults(page) {
       try {
-    
         loadingDiv.classList.remove("hidden");
         errorMessageDiv.classList.add("hidden");
 
         const imageFile = document.getElementById('image-upload').files[0];
         if (!imageFile) {
-          console.error("No image selected!");
-          return;
+          throw new Error("Please select an image first");
         }
         const formData = new FormData();
         formData.append('image', imageFile);
@@ -115,53 +296,49 @@
         });
 
         if (!response.ok) {
-          throw new Error("Failed to fetch restaurants. Server returned: " + response.status);
+          throw new Error("Failed to fetch restaurants");
         }
 
         const data = await response.json();
-        console.log("Response JSON:", data);
-
         loadingDiv.classList.add("hidden");
 
         displayPredictedCategories(data.detected_cuisines);
 
-        if (data.restaurants && data.restaurants.length > 0) {
+        if (data.restaurants?.length > 0) {
           displayRestaurants(data.restaurants);
-  
           currentPage = data.page || page;
           totalPages = data.total_pages || 1;
           updatePaginationControls(currentPage, totalPages);
         } else {
-          resultsDiv.innerHTML = `<p class="text-gray-600">❌ No matching restaurants found.</p>`;
+          resultsDiv.innerHTML = `<p>No matching restaurants found.</p>`;
           updatePaginationControls(1, 1);
         }
       } catch (error) {
-        console.error("Error fetching restaurants:", error);
         loadingDiv.classList.add("hidden");
         errorMessageDiv.classList.remove("hidden");
-        errorMessageDiv.textContent = "❌ Error: " + error.message;
+        errorMessageDiv.textContent = "Error: " + error.message;
       }
     }
+
     imageSearchForm.addEventListener('submit', (e) => {
       e.preventDefault();
       currentPage = 1; 
       fetchImageSearchResults(currentPage);
     });
+
     prevPageBtn.addEventListener('click', () => {
       if (currentPage > 1) {
         currentPage--;
         fetchImageSearchResults(currentPage);
       }
     });
+
     nextPageBtn.addEventListener('click', () => {
       if (currentPage < totalPages) {
         currentPage++;
         fetchImageSearchResults(currentPage);
       }
     });
-
-    // Optionally, you could trigger an initial fetch if you want to display a default image or placeholder.
-    // fetchImageSearchResults(currentPage);
   </script>
 </body>
 </html>

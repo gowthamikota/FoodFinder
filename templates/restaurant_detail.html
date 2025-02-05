@@ -9,68 +9,102 @@
 <body class="bg-gray-100">
     <header class="bg-white shadow-md">
         <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <h1 class="text-2xl font-bold text-gray-800">Restaurant Details</h1>
+            <h1 class="text-2xl font-bold text-gray-800">🍽️ Restaurant Details</h1>
             <div class="space-x-4">
-                <a href="/" class="text-gray-600 hover:text-gray-900">Home</a>
-                <a href="/nearby-search" class="text-gray-600 hover:text-gray-900">Nearby Restaurants</a>
-                <a href="/image-search" class="text-gray-600 hover:text-gray-900">Image Search</a>
-                <a href="/restaurant-list" class="text-gray-600 hover:text-gray-900">All Restaurants</a>
+                <a href="/" class="text-gray-600 hover:text-gray-900">🏠 Home</a>
+                <a href="/nearby-search" class="text-gray-600 hover:text-gray-900">📍 Nearby</a>
+                <a href="/image-search" class="text-gray-600 hover:text-gray-900">🖼️ Images</a>
+                <a href="/restaurant-list" class="text-gray-600 hover:text-gray-900">📜 All Restaurants</a>
             </div>
         </nav>
     </header>
 
     <main class="container mx-auto px-6 py-8">
         <section id="restaurant-details" class="bg-white p-6 rounded-lg shadow-md">
-            <!-- Restaurant details will be dynamically populated -->
             <div class="text-center">
-                <p class="text-gray-600">Loading restaurant details...</p>
+                <p class="text-gray-600">⏳ Loading restaurant details...</p>
             </div>
         </section>
     </main>
 
     <script>
-    
         const restaurantId = window.location.pathname.split('/').pop();
 
-        async function fetchRestaurantDetails() {
-            const detailsContainer = document.getElementById('restaurant-details');
+        const country_mapping = {
+    1: "India",
+    14: "Australia",
+    30: "Brazil",
+    37: "Canada",
+    94: "Indonesia",
+    148: "New Zealand",
+    162: "Philippines",
+    166: "Qatar",
+    184: "Singapore",
+    189: "South Africa",
+    191: "Sri Lanka",
+    208: "Turkey",
+    214: "UAE",
+    215: "United Kingdom",
+    216: "United States"
+};
 
-            try {
-                const response = await fetch(`/api/restaurant/${restaurantId}`);
-                const restaurant = await response.json();
+async function fetchRestaurantDetails() {
+    const detailsContainer = document.getElementById('restaurant-details');
 
-                detailsContainer.innerHTML = `
-                    <h2 class="text-3xl font-bold mb-4">${restaurant.name}</h2>
-                    <div class="grid md:grid-cols-2 gap-6">
-                        <div>
-                            <h3 class="text-xl font-semibold mb-2">Restaurant Information</h3>
-                            <p><strong>Cuisine:</strong> ${restaurant.cuisines}</p>
-                            <p><strong>City:</strong> ${restaurant.city}</p>
-                            <p><strong>Country:</strong> ${restaurant.country}</p>
-                            <p><strong>Address:</strong> ${restaurant.address || 'Not available'}</p>
-                        </div>
-                        <div>
-                            <h3 class="text-xl font-semibold mb-2">Contact Details</h3>
-                            <p><strong>Phone:</strong> ${restaurant.phone || 'Not available'}</p>
-                            <p><strong>Website:</strong> 
-                                ${restaurant.website ? 
-                                    `<a href="${restaurant.website}" target="_blank" class="text-blue-500 hover:underline">
-                                        ${restaurant.website}
-                                    </a>` : 
-                                    'Not available'
-                                }
-                            </p>
-                        </div>
-                    </div>
-                `;
-            } catch (error) {
-                detailsContainer.innerHTML = `
-                    <p class="text-red-500 text-center">
-                        Error loading restaurant details: ${error.message}
-                    </p>
-                `;
-            }
-        }
+    try {
+        const response = await fetch(`/api/restaurant/${restaurantId}`);
+        const restaurant = await response.json();
+
+        // Convert country code to country name
+        const countryName = country_mapping[restaurant.country] || "Unknown Country";
+
+        detailsContainer.innerHTML = `
+            <h2 class="text-4xl font-bold text-center mb-6">🍴 ${restaurant.name}</h2>
+
+            <div class="grid md:grid-cols-2 gap-8">
+                <!-- Basic Information -->
+                <div class="bg-gray-50 p-5 rounded-lg shadow">
+                    <h3 class="text-2xl font-semibold mb-4">🏨 Basic Information</h3>
+                    <p><strong>🍽️ Cuisine:</strong> <span class="text-gray-700">${restaurant.cuisines || 'Not available'}</span></p>
+                    <p><strong>📍 City:</strong> <span class="text-gray-700">${restaurant.city || 'Not available'}</span></p>
+                    <p><strong>🌍 Country:</strong> <span class="text-gray-700">${countryName}</span></p>
+                    <p><strong>🏠 Address:</strong> <span class="text-gray-700">${restaurant.address || 'Not available'}</span></p>
+                    <p><strong>📌 Locality:</strong> <span class="text-gray-700">${restaurant.locality_verbose || 'Not available'}</span></p>
+                    <p><strong>🗺️ Coordinates:</strong> <span class="text-gray-700">${restaurant.latitude}, ${restaurant.longitude}</span></p>
+                </div>
+
+                <!-- Services & Ratings -->
+                <div class="bg-gray-50 p-5 rounded-lg shadow">
+                    <h3 class="text-2xl font-semibold mb-4">💰 Pricing & Ratings</h3>
+                    <p><strong>💵 Avg Cost for Two:</strong> <span class="text-gray-700">${restaurant.currency} ${restaurant.average_cost_for_two || 'Not available'}</span></p>
+                    <p><strong>💰 Price Range:</strong> <span class="text-gray-700">${restaurant.price_range || 'Not available'}</span></p>
+                    <p><strong>⭐ Rating:</strong> <span class="text-gray-700">${restaurant.rating || 'Not rated'} (${restaurant.rating_text || ''})</span></p>
+    
+                    <p><strong>👍 Votes:</strong> <span class="text-gray-700">${restaurant.votes || 'No votes yet'}</span></p>
+                </div>
+            </div>
+
+            <!-- Additional Features -->
+            <div class="mt-8 bg-white p-6 rounded-lg shadow">
+                <h3 class="text-2xl font-semibold mb-4">🔗 Services Available</h3>
+                <div class="grid md:grid-cols-3 gap-4">
+                    <p><strong>📅 Table Booking:</strong> ${restaurant.has_table_booking ? '✅ Available' : '❌ Not Available'}</p>
+                    <p><strong>🛵 Online Delivery:</strong> ${restaurant.has_online_delivery ? '✅ Yes' : '❌ No'}</p>
+                    <p><strong>🚚 Delivering Now:</strong> ${restaurant.is_delivering_now ? '✅ Yes' : '❌ No'}</p>
+                    <p><strong>📜 Order Menu:</strong> ${restaurant.switch_to_order_menu ? '✅ Available' : '❌ Not Available'}</p>
+                </div>
+            </div>
+        `;
+    } catch (error) {
+        detailsContainer.innerHTML = `
+            <p class="text-red-500 text-center">
+                ❌ Error loading restaurant details: ${error.message}
+            </p>
+        `;
+    }
+}
+
+fetchRestaurantDetails();
 
         fetchRestaurantDetails();
     </script>

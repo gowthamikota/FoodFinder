@@ -1,64 +1,232 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Restaurant Finder</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🍽️ FoodFinder</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary-red: #E23744;
+      --secondary-red: #CB202D;
+      --text-dark: #1C1C1C;
+      --text-light: #696969;
+      --background-gray: #F8F8F8;
+      --white: #FFFFFF;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--background-gray);
+      color: var(--text-dark);
+      line-height: 1.6;
+    }
+
+    .header {
+      background: var(--white);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      position: fixed;
+      width: 100%;
+      z-index: 100;
+    }
+
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 50px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--primary-red);
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: var(--text-dark);
+      font-weight: 500;
+      margin-left: 25px;
+      transition: color 0.3s;
+    }
+
+    .nav-links a:hover {
+      color: var(--primary-red);
+    }
+
+    .hero {
+      padding-top: 80px;
+      background: var(--white);
+      min-height: 80vh;
+    }
+
+    .hero-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 60px 20px;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-size: 48px;
+      color: var(--text-dark);
+      margin-bottom: 20px;
+    }
+
+    .hero-description {
+      font-size: 18px;
+      color: var(--text-light);
+      margin-bottom: 40px;
+    }
+
+    .feature-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 30px;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: var(--white);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      transition: transform 0.3s;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+    }
+
+    .card-icon {
+      font-size: 32px;
+      color: var(--primary-red);
+      margin: 20px 0;
+    }
+
+    .card h3 {
+      color: var(--text-dark);
+      margin-bottom: 12px;
+      font-size: 20px;
+    }
+
+    .card p {
+      color: var(--text-light);
+      margin-bottom: 20px;
+      padding: 0 20px;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 12px 24px;
+      background: var(--primary-red);
+      color: var(--white);
+      text-decoration: none;
+      border-radius: 6px;
+      font-weight: 500;
+      transition: background 0.3s;
+      margin: 10px 0 20px;
+    }
+
+    .btn:hover {
+      background: var(--secondary-red);
+    }
+
+    .footer {
+      background: var(--text-dark);
+      color: var(--white);
+      padding: 30px 0;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    @media (max-width: 768px) {
+      .nav {
+        padding: 15px 20px;
+      }
+      
+      .hero h1 {
+        font-size: 36px;
+      }
+      
+      .feature-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
-<body class="bg-gray-100">
-    <header class="bg-white shadow-md">
-        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <h1 class="text-2xl font-bold text-gray-800">Restaurant Finder</h1>
-            <div class="space-x-4">
-                <a href="/" class="text-gray-600 hover:text-gray-900">Home</a>
-                <a href="/nearby-search" class="text-gray-600 hover:text-gray-900">Nearby Restaurants</a>
-                <a href="/image-search" class="text-gray-600 hover:text-gray-900">Image Search</a>
-                <a href="/restaurant-list" class="text-gray-600 hover:text-gray-900">All Restaurants</a>
+<body>
+  <header class="header">
+    <nav class="nav">
+      <div class="logo">
+        <i class="fas fa-utensils"></i>
+        FoodFinder
+      </div>
+      <div class="nav-links">
+        <div class="nav-links">    
+        <a href="/"><i class="fas fa-home"></i>Home</a>
+        <a href="/nearby-search"><i class="fas fa-motorcycle"></i>Search nearby</a>
+        <a href="/image-search"><i class="fas fa-camera"></i>Image search</a>
+        <a href="/restaurant-list"><i class="fas fa-utensils"></i>All restaurants</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero" id="home">
+      <div class="hero-content">
+        <h1>Discover the Best Food & Drinks</h1>
+        <p class="hero-description">
+          Explore restaurants, cafes, and bars near you
+        </p>
+        
+        <div class="feature-cards">
+          <div class="card">
+            <div class="card-icon">
+              <i class="fas fa-motorcycle"></i>
             </div>
-        </nav>
-    </header>
+            <h3>Nearby Restaurants</h3>
+            <p>Discover exceptional dining options within your immediate vicinity.</p>
+            <a href="/nearby-search" class="btn">Explore Nearby</a>
 
-    <main class="container mx-auto px-6 py-8">
-        <section class="text-center">
-            <h2 class="text-4xl font-bold mb-4 text-gray-800">Discover Amazing Restaurants</h2>
-            <p class="text-gray-600 mb-8 max-w-2xl mx-auto">
-                Explore restaurants near you, search by cuisine images, or browse our comprehensive list. 
-                Find your next dining experience with ease!
-            </p>
-
-            <div class="grid md:grid-cols-3 gap-6">
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h3 class="text-xl font-semibold mb-4">Nearby Restaurants</h3>
-                    <p class="mb-4">Find restaurants close to your current location.</p>
-                    <a href="/nearby-search" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-                        Search Nearby
-                    </a>
-                </div>
-
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h3 class="text-xl font-semibold mb-4">Image Search</h3>
-                    <p class="mb-4">Upload a food image to find similar cuisine restaurants.</p>
-                    <a href="/image-search" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
-                        Search by Image
-                    </a>
-                </div>
-
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h3 class="text-xl font-semibold mb-4">All Restaurants</h3>
-                    <p class="mb-4">Browse our complete list of restaurants.</p>
-                    <a href="/restaurant-list" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
-                        View List
-                    </a>
-                </div>
+          </div>
+          
+          <div class="card">
+            <div class="card-icon">
+              <i class="fas fa-utensils"></i>
             </div>
-        </section>
-    </main>
-
-    <footer class="bg-white shadow-md mt-8">
-        <div class="container mx-auto px-6 py-4 text-center">
-            <p class="text-gray-600">&copy; 2024 Restaurant Finder. All rights reserved.</p>
+            <h3>Image Search</h3>
+            <p>Find restaurants by uploading a photo of your desired cuisine.</p>
+            <a href="/image-search" class="btn">Search by Image</a>
+          </div>
+          
+          <div class="card">
+            <div class="card-icon">
+              <i class="fas fa-glass-martini-alt"></i>
+            </div>
+            <h3>Restaurant Collection</h3>
+            <p>Browse our curated selection of remarkable dining destinations.</p>
+            <a href="/restaurant-list" class="btn">View Collection</a>
+          </div>
         </div>
-    </footer>
+      </div>
+    </section>
+  </main>
+
+
 </body>
 </html>

@@ -1,182 +1,327 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>All Restaurants</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100">
-  <header class="bg-white shadow-md">
-    <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
-      <h1 class="text-2xl font-bold text-gray-800">All Restaurants</h1>
-      <div class="space-x-4">
-        <a href="/" class="text-gray-600 hover:text-gray-900">Home</a>
-        <a href="/nearby-search" class="text-gray-600 hover:text-gray-900">Nearby Restaurants</a>
-        <a href="/image-search" class="text-gray-600 hover:text-gray-900">Image Search</a>
-        <a href="/restaurant-list" class="text-gray-600 hover:text-gray-900">All Restaurants</a>
-      </div>
-    </nav>
-  </header>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Restaurants</title>
+    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+    <style>
+        :root {
+            --primary: #E23744;
+            --secondary: #F4F4F4;
+            --text-dark: #1C1C1C;
+            --text-light: #666666;
+            --white: #FFFFFF;
+        }
 
-  <main class="container mx-auto px-6 py-8">
-    <section class="bg-white p-6 rounded-lg shadow-md">
-      <h2 class="text-2xl font-bold mb-4">Restaurant Directory</h2>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Okra', system-ui, -apple-system, sans-serif;
+        }
 
-      <div class="mb-4 flex justify-between items-center">
-        <div class="flex space-x-2">
-          <button id="prev-page" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">
-            Previous
-          </button>
-          <button id="next-page" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">
-            Next
-          </button>
-        </div>
-        <div id="page-info" class="text-gray-600">
-          Page 1 of 1
-        </div>
-      </div>
+        body {
+            background-color: var(--secondary);
+            color: var(--text-dark);
+        }
 
-      <!-- Filters Section -->
-      <section class="mb-8">
-        <h3 class="text-xl font-semibold mb-4">Filter Restaurants</h3>
-        <div class="grid md:grid-cols-2 gap-6">
-          <!-- Filter by Country -->
-          <div class="bg-white p-6 rounded-lg shadow-md">
-            <h4 class="text-lg font-semibold mb-4">By Country</h4>
-            <select id="country" class="w-full px-4 py-2 border rounded mb-4">
-              <option value="">All country</option>
-              <option value="1">India</option>
-              <option value="14">Australia</option>
-              <option value="30">Brazil</option>
-              <option value="37">Canada</option>
-              <option value="94">Indonesia</option>
-              <option value="148">New Zealand</option>
-              <option value="162">Philippines</option>
-              <option value="166">Qatar</option>
-              <option value="184">Singapore</option>
-              <option value="189">South Africa</option>
-              <option value="191">Sri Lanka</option>
-              <option value="208">Turkey</option>
-              <option value="214">UAE</option>
-              <option value="215">United Kingdom</option>
-              <option value="216">United States</option>
-            </select>
-          </div>
+        header {
+            background: var(--white);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
 
-          <!-- Filter by Average Cost for Two -->
-          <div class="bg-white p-6 rounded-lg shadow-md">
-            <h4 class="text-lg font-semibold mb-4">By Average Cost for Two</h4>
-            <input type="number" id="avg_cost" placeholder="Enter Average Cost" class="w-full px-4 py-2 border rounded mb-4">
-            <button id="filter-cost-btn" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
-              Filter by Cost
-            </button>
-          </div>
-        </div>
-      </section>
+        nav {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-      <!-- Search by Restaurant Name -->
-      <section class="mb-8">
-        <h3 class="text-xl font-semibold mb-4">Search by Restaurant Name</h3>
-        <input type="text" id="search-query" placeholder="Enter restaurant name" class="w-full px-4 py-2 border rounded mb-4">
-        <button id="search-btn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-          Search
-        </button>
-      </section>
+        nav h1 {
+            font-size: 24px;
+            color: var(--primary);
+        }
 
-      <!-- Restaurants List -->
-      <div id="restaurants-container" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <!-- Restaurants will be dynamically populated here -->
-      </div>
-    </section>
-  </main>
+        .nav-links a {
+            color: var(--text-dark);
+            text-decoration: none;
+            margin-left: 32px;
+            transition: color 0.2s;
+        }
 
-  <script>
-    let currentPage = 1;
-    let totalPages = 1;
-    const limit = 9;
+        .nav-links a:hover {
+            color: var(--primary);
+        }
 
-    const restaurantsContainer = document.getElementById('restaurants-container');
-    const pageInfo = document.getElementById('page-info');
-    const prevPageBtn = document.getElementById('prev-page');
-    const nextPageBtn = document.getElementById('next-page');
-    
-    const countrySelect = document.getElementById('country');
-    const avgCostInput = document.getElementById('avg_cost');
-    const searchQueryInput = document.getElementById('search-query');
-    const filterCostBtn = document.getElementById('filter-cost-btn');
-    const searchBtn = document.getElementById('search-btn');
+        main {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 24px;
+        }
 
-    filterCostBtn.addEventListener('click', filterRestaurants);
-    searchBtn.addEventListener('click', filterRestaurants);
+        .content-section {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        }
 
-    async function fetchRestaurants(page, country_code = '', avgCost = '', searchQuery = '') {
-        try {
-            let apiUrl = `/api/restaurants?page=${page}&limit=${limit}`;
-            
-            if (country_code) apiUrl += `&country_code=${country_code}`;
-            if (avgCost) apiUrl += `&avg_cost=${avgCost}`;
-            if (searchQuery) apiUrl += `&search=${searchQuery}`;
+        .filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
 
-            console.log("Fetching from URL:", apiUrl);
+        .filter-card {
+            background: var(--secondary);
+            padding: 20px;
+            border-radius: 10px;
+        }
 
-            const response = await fetch(apiUrl);
-            
-            if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+        .filter-title {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
 
-            const data = await response.json();
+        select, input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
 
-            if (data.restaurants && data.restaurants.length > 0) {
-                restaurantsContainer.innerHTML = data.restaurants.map(restaurant => `
-                    <div class="bg-white p-4 rounded-lg shadow">
-                        <h3 class="font-bold text-lg">${restaurant.name}</h3>
-                        <p>Cuisine: ${restaurant.cuisines}</p>
-                        <p>Location: ${restaurant.city}, ${restaurant.country}</p>
-                        <p>Average Cost for Two: ₹${restaurant.average_cost_for_two}</p>
-                        <a href="/restaurant/${restaurant.restaurant_id}" class="text-blue-500 hover:underline">
-                            View Details
-                        </a>
-                    </div>
-                `).join('');
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
 
-                totalPages = data.total_pages || 1;
-                pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
-                prevPageBtn.disabled = currentPage === 1;
-                nextPageBtn.disabled = currentPage === totalPages;
-            } else {
-                restaurantsContainer.innerHTML = `<p class="text-red-500 col-span-full">No restaurants found</p>`;
+        .btn-primary {
+            background: var(--primary);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background: #b71c27;
+        }
+
+        .restaurants-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .restaurant-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s;
+        }
+
+        .restaurant-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .restaurant-name {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .restaurant-info {
+            color: var(--text-light);
+            font-size: 14px;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
             }
-        } catch (error) {
-            console.error("Fetch Error:", error);
-            restaurantsContainer.innerHTML = `<p class="text-red-500 col-span-full">Error loading restaurants: ${error.message}</p>`;
         }
-    }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <h1>All Restaurants</h1>
+            <div class="nav-links">
+                <a href="/">🏠 Home</a>
+                <a href="/nearby-search">📍 Nearby</a>
+                <a href="/image-search">📷 Image Search</a>
+                <a href="/restaurant-list">🍽️ All Restaurants</a>
+            </div>
+        </nav>
+    </header>
 
+    <main>
+        <section class="content-section">
+            <section class="filters">
+                <div class="filter-card">
+                    <h4 class="filter-title">Filter by Country</h4>
+                    <select id="country">
+                        <option value="">All Countries</option>
+                        <option value="1">India</option>
+                        <option value="14">Australia</option>
+                        <option value="30">Brazil</option>
+                        <option value="37">Canada</option>
+                        <option value="94">Indonesia</option>
+                        <option value="148">New Zealand</option>
+                        <option value="215">United Kingdom</option>
+                        <option value="216">United States</option>
+                    </select>
+                </div>
 
-    fetchRestaurants(currentPage);
+                <div class="filter-card">
+                    <h4 class="filter-title">Filter by Cuisine</h4>
+                    <select id="cuisine">
+                        <option value="">All Cuisines</option>
+                        <option value="Italian">Italian</option>
+                        <option value="American">American</option>
+                        <option value="Chinese">Chinese</option>
+                        <option value="Indian">Indian</option>
+                        <option value="Japanese">Japanese</option>
+                    </select>
+                </div>
 
+                <div class="filter-card">
+                    <h4 class="filter-title">Filter by Cost</h4>
+                    <input type="number" id="avg_cost" placeholder="Enter Max Cost">
+                </div>
 
-    prevPageBtn.addEventListener('click', () => {
-        if (currentPage > 1) {
-            currentPage--;
-            fetchRestaurants(currentPage, countrySelect.value, avgCostInput.value, searchQueryInput.value);
-        }
-    });
+                <div class="filter-card">
+                    <h4 class="filter-title">Search Restaurant</h4>
+                    <input type="text" id="search-query" placeholder="Enter restaurant name">
+                    <button id="filter-btn" class="btn btn-primary">Apply Filters</button>
+                </div>
+            </section>
 
-    nextPageBtn.addEventListener('click', () => {
-        if (currentPage < totalPages) {
-            currentPage++;
-            fetchRestaurants(currentPage, countrySelect.value, avgCostInput.value, searchQueryInput.value);
-        }
-    });
-    function filterRestaurants() {
-        currentPage = 1; 
-        fetchRestaurants(currentPage, countrySelect.value, avgCostInput.value, searchQueryInput.value);
-    }
+            <div id="restaurants-container" class="restaurants-grid"></div>
 
-    countrySelect.addEventListener('change', filterRestaurants);
-    filterCostBtn.addEventListener('click', filterRestaurants); 
-</script>
+            <div class="pagination">
+                <button id="prev-page" class="btn btn-primary">Previous</button>
+                <div id="page-info">Page 1</div>
+                <button id="next-page" class="btn btn-primary">Next</button>
+            </div>
+        </section>
+    </main>
 
+    <script>
+      let currentPage = 1;
+      let totalPages = 1;
+      const limit = 9;
+      const restaurantsContainer = document.getElementById('restaurants-container');
+      const cuisineDropdown = document.getElementById("cuisine");
+      const countryDropdown = document.getElementById("country");
+      const avgCostInput = document.getElementById("avg_cost");
+      const searchInput = document.getElementById("search-query");
+      const filterButton = document.getElementById("filter-btn");
+      const prevPageButton = document.getElementById("prev-page");
+      const nextPageButton = document.getElementById("next-page");
+      const pageInfo = document.getElementById("page-info");
+  
+      async function fetchCuisines() {
+          try {
+              const response = await fetch("/api/cuisines");
+              const data = await response.json();
+  
+              if (data.cuisines && data.cuisines.length > 0) {
+                  cuisineDropdown.innerHTML = `<option value="">All Cuisines</option>` +
+                      data.cuisines.map(cuisine => `<option value="${cuisine}">${cuisine}</option>`).join('');
+              }
+          } catch (error) {
+              console.error("Error fetching cuisines:", error);
+          }
+      }
+  
+      async function fetchRestaurants() {
+          const cuisine = cuisineDropdown.value;
+          const country = countryDropdown.value;
+          const avgCost = avgCostInput.value;
+          const searchQuery = searchInput.value;
+  
+          let apiUrl = `/api/restaurants?page=${currentPage}&limit=${limit}`;
+          if (cuisine) apiUrl += `&cuisine=${cuisine}`;
+          if (country) apiUrl += `&country_code=${country}`;
+          if (avgCost) apiUrl += `&avg_cost=${avgCost}`;
+          if (searchQuery) apiUrl += `&search=${searchQuery}`;
+  
+          try {
+              const response = await fetch(apiUrl);
+              const data = await response.json();
+  
+              if (data.restaurants.length > 0) {
+                  restaurantsContainer.innerHTML = data.restaurants.map(r => `
+                      <div class="restaurant-card">
+                          <h3 class="restaurant-name">${r.name}</h3>
+                          <p class="restaurant-info">Cuisine: ${r.cuisines}</p>
+                          <p class="restaurant-info">Location: ${r.country}</p>
+                          <p class='restaurant-info'>Avg cost for two: ${r.average_cost_for_two}</p><br>                        <a href="/restaurant/${r.restaurant_id}" class="btn btn-primary">View Details</a>
+                      </div>
+                  `).join('');
+              } else {
+                  restaurantsContainer.innerHTML = `<p class="error">No restaurants found.</p>`;
+              }
+  
+              // Update pagination controls
+              totalPages = data.total_pages;
+              pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+              prevPageButton.disabled = currentPage <= 1;
+              nextPageButton.disabled = currentPage >= totalPages;
+  
+          } catch (error) {
+              console.error("Error fetching restaurants:", error);
+          }
+      }
+  
+      // Pagination handlers
+      prevPageButton.addEventListener("click", () => {
+          if (currentPage > 1) {
+              currentPage--;
+              fetchRestaurants();
+          }
+      });
+  
+      nextPageButton.addEventListener("click", () => {
+          if (currentPage < totalPages) {
+              currentPage++;
+              fetchRestaurants();
+          }
+      });
+  
+      // Filter event listener
+      filterButton.addEventListener("click", () => {
+          currentPage = 1; // Reset to first page when filtering
+          fetchRestaurants();
+      });
+  
+      // Load data on page load
+      fetchCuisines();
+      fetchRestaurants();
+  </script>
+  
+  
 </body>
 </html>

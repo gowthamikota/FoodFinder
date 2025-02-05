@@ -6,6 +6,7 @@ from tensorflow.keras.applications.mobilenet_v2 import preprocess_input, decode_
 from tensorflow.keras.preprocessing import image
 import os, math, traceback
 
+
 load_dotenv()
 
 # Supabase configuration
@@ -132,41 +133,51 @@ def get_restaurants():
         limit = int(request.args.get("limit", 9))
         offset = (page - 1) * limit
         country_code = request.args.get("country_code", type=int)
-        cuisines = request.args.get("cuisines")
         search_query = request.args.get("search", '').strip()
         avg_cost_raw = request.args.get("avg_cost")
+        cuisine_filter = request.args.get("cuisine", "").strip().lower()  # Fetch cuisine from query params
+        
         try:
             avg_cost = int(float(avg_cost_raw)) if avg_cost_raw else None
         except ValueError:
             return jsonify({"error": "Invalid average cost value"}), 400
+
         query = supabase.table("restaurants").select("*")
         count_query = supabase.table("restaurants").select("restaurant_id")
+
+        # Filter by country
         if country_code:
             query = query.eq("country", country_code)
             count_query = count_query.eq("country", country_code)
 
+        # Filter by search query (name of the restaurant)
         if search_query:
             search_term = f"%{search_query}%"
             query = query.ilike("name", search_term)
             count_query = count_query.ilike("name", search_term)
 
+        # Filter by average cost
         if avg_cost is not None:
             query = query.lte("average_cost_for_two", avg_cost)
             count_query = count_query.lte("average_cost_for_two", avg_cost)
 
-        if cuisines:
-            cuisines_list = [cuisine.strip().lower() for cuisine in cuisines.split(',')]
-            for cuisine in cuisines_list:
-                query = query.ilike("cuisines", f"%{cuisine}%")
-                count_query = count_query.ilike("cuisines", f"%{cuisine}%")
+        # Filter by cuisine type
+        if cuisine_filter:
+            cuisine_search_term = f"%{cuisine_filter}%"
+            query = query.ilike("cuisines", cuisine_search_term)
+            count_query = count_query.ilike("cuisines", cuisine_search_term)
+
+        # Get the total count for pagination
         count_response = count_query.execute()
         total_count = len(count_response.data)
         total_pages = max(1, -(-total_count // limit))  
+
+        # Apply pagination
         query = query.range(offset, offset + limit - 1)
         response = query.execute()
 
-        print(f"[DEBUG] Search query: {search_query}")
-        print(f"[DEBUG] Query response: {response.data}")
+        print(f"[DEBUG] Cuisine Filter: {cuisine_filter}")
+        print(f"[DEBUG] Query Response: {response.data}")
 
         if response.data:
             return jsonify({
@@ -188,6 +199,22 @@ def get_restaurants():
         print("[ERROR] API Failure:", str(e))
         print(traceback.format_exc())
         return jsonify({"error": f"Server error: {str(e)}"}), 500
+@app.route("/api/cuisines", methods=["GET"])
+def get_cuisines():
+    try:
+        response = supabase.table("restaurants").select("cuisines").execute()
+        
+        # Extract cuisines and split by commas (assuming multiple cuisines are comma-separated)
+        all_cuisines = set()
+        for restaurant in response.data:
+            cuisines = restaurant.get("cuisines", "")
+            if cuisines:
+                for cuisine in cuisines.split(","):
+                    all_cuisines.add(cuisine.strip())
+
+        return jsonify({"cuisines": sorted(all_cuisines)}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/api/restaurants/nearby", methods=['GET'])
 def get_nearby_restaurants():
@@ -269,5 +296,6 @@ def search_restaurants_by_image():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
