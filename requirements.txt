@@ -1,8 +1,8 @@
-Flask
-supabase
-tensorflow
-numpy
-Pillow
-dotenv
-geopy
-werkzeug
+Flask==3.0.0
+supabase==1.0.3
+tensorflow==2.15.0
+numpy==1.26.3
+Pillow==10.1.0
+python-dotenv==1.0.1
+geopy==2.4.0
+werkzeug==3.0.1
