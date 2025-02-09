@@ -1,0 +1,8 @@
+Flask
+supabase
+tensorflow
+numpy
+Pillow
+dotenv
+geopy
+werkzeug
