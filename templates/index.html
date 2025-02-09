@@ -13,6 +13,7 @@
       --text-light: #696969;
       --background-gray: #F8F8F8;
       --white: #FFFFFF;
+      --shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
 
     * {
@@ -30,10 +31,11 @@
 
     .header {
       background: var(--white);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      box-shadow: var(--shadow);
       position: fixed;
       width: 100%;
       z-index: 100;
+      padding: 15px 0;
     }
 
     .nav {
@@ -50,39 +52,55 @@
       align-items: center;
       gap: 8px;
       font-size: 24px;
-      font-weight: 600;
+      font-weight: 700;
       color: var(--primary-red);
+      transition: transform 0.3s ease-in-out;
+    }
+
+    .logo:hover {
+      transform: scale(1.05);
     }
 
     .nav-links a {
       text-decoration: none;
       color: var(--text-dark);
       font-weight: 500;
-      margin-left: 25px;
-      transition: color 0.3s;
+      margin-left: 30px;
+      transition: color 0.3s, transform 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 16px;
     }
 
     .nav-links a:hover {
       color: var(--primary-red);
+      transform: translateY(-2px);
     }
 
     .hero {
-      padding-top: 80px;
+      padding-top: 100px;
       background: var(--white);
-      min-height: 80vh;
+      min-height: 85vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
     }
 
     .hero-content {
       max-width: 1200px;
       margin: 0 auto;
       padding: 60px 20px;
-      text-align: center;
     }
 
     .hero h1 {
       font-size: 48px;
       color: var(--text-dark);
       margin-bottom: 20px;
+      font-weight: 700;
+      text-transform: capitalize;
+      animation: fadeIn 1s ease-in-out;
     }
 
     .hero-description {
@@ -102,56 +120,68 @@
 
     .card {
       background: var(--white);
-      border-radius: 8px;
+      border-radius: 12px;
       overflow: hidden;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      transition: transform 0.3s;
+      box-shadow: var(--shadow);
+      transition: transform 0.3s, box-shadow 0.3s;
+      border: 1px solid rgba(0,0,0,0.05);
+      position: relative;
+      text-align: center;
     }
 
     .card:hover {
       transform: translateY(-5px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.12);
     }
 
     .card-icon {
-      font-size: 32px;
+      height: 140px;
+      background: var(--background-gray);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
       color: var(--primary-red);
-      margin: 20px 0;
     }
 
     .card h3 {
       color: var(--text-dark);
-      margin-bottom: 12px;
-      font-size: 20px;
+      margin: 20px 0 12px;
+      font-size: 22px;
+      padding: 0 20px;
+      font-weight: 600;
     }
 
     .card p {
       color: var(--text-light);
-      margin-bottom: 20px;
       padding: 0 20px;
+      font-size: 16px;
+      line-height: 1.5;
     }
 
     .btn {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
       padding: 12px 24px;
-      background: var(--primary-red);
-      color: var(--white);
+      color:var(--primary-red);
       text-decoration: none;
-      border-radius: 6px;
+      border-radius: 8px;
       font-weight: 500;
-      transition: background 0.3s;
-      margin: 10px 0 20px;
+      transition: background 0.3s, transform 0.2s;
+      margin: 20px 0;
+      font-size: 16px;
     }
 
     .btn:hover {
-      background: var(--secondary-red);
+      /* color: var( --white); */
+      text-decoration: underline var(--text-light);
+      transform: scale(1.05);
     }
 
-    .footer {
-      background: var(--text-dark);
-      color: var(--white);
-      padding: 30px 0;
-      text-align: center;
-      font-size: 14px;
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     @media (max-width: 768px) {
@@ -166,6 +196,10 @@
       .feature-cards {
         grid-template-columns: 1fr;
       }
+      
+      .nav-links {
+        display: none;
+      }
     }
   </style>
 </head>
@@ -177,7 +211,6 @@
         FoodFinder
       </div>
       <div class="nav-links">
-        <div class="nav-links">    
         <a href="/"><i class="fas fa-home"></i>Home</a>
         <a href="/nearby-search"><i class="fas fa-motorcycle"></i>Search nearby</a>
         <a href="/image-search"><i class="fas fa-camera"></i>Image search</a>
@@ -191,7 +224,7 @@
       <div class="hero-content">
         <h1>Discover the Best Food & Drinks</h1>
         <p class="hero-description">
-          Explore restaurants, cafes, and bars near you
+          Explore top-rated restaurants, cafes, and bars near you.
         </p>
         
         <div class="feature-cards">
@@ -200,33 +233,39 @@
               <i class="fas fa-motorcycle"></i>
             </div>
             <h3>Nearby Restaurants</h3>
-            <p>Discover exceptional dining options within your immediate vicinity.</p>
-            <a href="/nearby-search" class="btn">Explore Nearby</a>
-
+            <p>Find exceptional dining options within your area.</p>
+            <a href="/nearby-search" class="btn">
+              <i class="fas fa-arrow-right"></i>
+              Explore Nearby
+            </a>
+          </div>
+          
+          <div class="card">
+            <div class="card-icon">
+              <i class="fas fa-camera"></i>
+            </div>
+            <h3>Image Search</h3>
+            <p>Upload a photo to find restaurants serving that cuisine.</p>
+            <a href="/image-search" class="btn">
+              <i class="fas fa-arrow-right"></i>
+              Search by Image
+            </a>
           </div>
           
           <div class="card">
             <div class="card-icon">
               <i class="fas fa-utensils"></i>
             </div>
-            <h3>Image Search</h3>
-            <p>Find restaurants by uploading a photo of your desired cuisine.</p>
-            <a href="/image-search" class="btn">Search by Image</a>
-          </div>
-          
-          <div class="card">
-            <div class="card-icon">
-              <i class="fas fa-glass-martini-alt"></i>
-            </div>
             <h3>Restaurant Collection</h3>
-            <p>Browse our curated selection of remarkable dining destinations.</p>
-            <a href="/restaurant-list" class="btn">View Collection</a>
+            <p>Browse curated selections of top-rated restaurants.</p>
+            <a href="/restaurant-list" class="btn">
+              <i class="fas fa-arrow-right"></i>
+              View Collection
+            </a>
           </div>
         </div>
       </div>
     </section>
   </main>
-
-
 </body>
 </html>
