@@ -126,48 +126,50 @@ def get_restaurant_by_id(restaurant_id):
 @app.route("/api/restaurants", methods=['GET'])
 def get_restaurants():
     try:
+        # Pagination Parameters
         page = int(request.args.get("page", 1))
         limit = int(request.args.get("limit", 9))
         offset = (page - 1) * limit
+
+        # Filtering Parameters
         country_code = request.args.get("country_code", type=int)
-        search_query = request.args.get("search", '').strip()
+        search_query = request.args.get("search", "").strip()
         avg_cost_raw = request.args.get("avg_cost")
         cuisine_filter = request.args.get("cuisine", "").strip().lower()
-        try:
-            avg_cost = int(float(avg_cost_raw)) if avg_cost_raw else None
-        except ValueError:
-            return jsonify({"error": "Invalid average cost value"}), 400
-
+        avg_cost = None
+        if avg_cost_raw:
+            try:
+                avg_cost = int(float(avg_cost_raw))
+            except ValueError:
+                return jsonify({"error": "Invalid average cost value"}), 400
         query = supabase.table("zomato_full_data").select("*")
-        count_query = supabase.table("zomato_full_data").select("id")
+        count_query = supabase.table("zomato_full_data").select("id", count="exact")  # Get exact count
 
-        # Apply filters
+        # Apply Filters
         if country_code:
             query = query.contains("location", {"country_id": country_code})  
             count_query = count_query.contains("location", {"country_id": country_code})
 
         if search_query:
-            search_term = f"%{search_query}%"
-            query = query.ilike("name", search_term)
-            count_query = count_query.ilike("name", search_term)
+            query = query.ilike("name", f"%{search_query}%")
+            count_query = count_query.ilike("name", f"%{search_query}%")
 
         if avg_cost is not None:
             query = query.lte("average_cost_for_two", avg_cost)
             count_query = count_query.lte("average_cost_for_two", avg_cost)
 
         if cuisine_filter:
-            cuisine_search_term = f"%{cuisine_filter}%"
-            query = query.ilike("cuisines", cuisine_search_term)
-            count_query = count_query.ilike("cuisines", cuisine_search_term)
+            query = query.ilike("cuisines", f"%{cuisine_filter}%")
+            count_query = count_query.ilike("cuisines", f"%{cuisine_filter}%")
 
-        # Get total count for pagination
         count_response = count_query.execute()
-        total_count = len(count_response.data) if count_response.data else 0
-        total_pages = max(1, -(-total_count // limit))
+        total_count = count_response.count or 0
+        total_pages = max(1, math.ceil(total_count / limit))
 
-        # Apply pagination
-        query = query.range(offset, offset + limit - 1)
+
+        query = query.range(offset, offset + limit)
         response = query.execute()
+
 
         return jsonify({
             "restaurants": response.data or [],
@@ -177,15 +179,14 @@ def get_restaurants():
         }), 200
 
     except Exception as e:
-        print("[ERROR] API Failure:", str(e))
+        print("[ERROR] API Failure:", traceback.format_exc())
         return jsonify({"error": f"Server error: {str(e)}"}), 500
+
 
 @app.route("/api/cuisines", methods=["GET"])
 def get_cuisines():
     try:
         response = supabase.table("zomato_full_data").select("cuisines").execute()
-        
-        # Extract cuisines
         all_cuisines = set()
         for restaurant in response.data:
             cuisines = restaurant.get("cuisines", "")
@@ -224,12 +225,13 @@ def get_nearby_restaurants():
         lat_margin = 0.5  
         lon_margin = 0.5  
 
-        query = supabase.table("restaurants")\
-            .select("*")\
-            .gte("latitude", lat - lat_margin)\
-            .lte("latitude", lat + lat_margin)\
-            .gte("longitude", lon - lon_margin)\
-            .lte("longitude", lon + lon_margin)
+        query = supabase.table("zomato_full_data")\
+    .select("*, location->>latitude AS latitude, location->>longitude AS longitude")\
+    .gte("location->>latitude", str(lat - lat_margin))\
+    .lte("location->>latitude", str(lat + lat_margin))\
+    .gte("location->>longitude", str(lon - lon_margin))\
+    .lte("location->>longitude", str(lon + lon_margin))
+
         response = query.execute()
         if not response.data:
             return jsonify({"error": "No restaurants found in this area"}), 404
@@ -238,8 +240,8 @@ def get_nearby_restaurants():
         nearby_restaurants = []
         for restaurant in response.data:
             try:
-                rest_lat = float(restaurant.get("latitude", 0))
-                rest_lon = float(restaurant.get("longitude", 0))
+                rest_lat = float(restaurant["location"]["latitude"])
+                rest_lon = float(restaurant["location"]["longitude"])
                 distance = geodesic((lat, lon), (rest_lat, rest_lon)).kilometers
                 if distance <= radius:
                     restaurant["distance"] = round(distance, 2)
@@ -282,8 +284,9 @@ def search_restaurants_by_image():
         file.save(img_path)
 
         food_items = process_image(img_path)
+        
         if not food_items:
-            return jsonify({"error": "Could not determine cuisine from image"}), 404
+            return jsonify({"status": "success", "message": "No matching cuisine found.", "restaurants": []}), 200
 
         detected_cuisines = set()
         for item in food_items:
@@ -292,7 +295,7 @@ def search_restaurants_by_image():
 
         response = supabase.table("zomato_full_data").select("*").execute()
         if not response.data:
-            return jsonify({"error": "No restaurants found in the database"}), 404
+            return jsonify({"status": "success", "message": "No restaurants available in database.", "restaurants": []}), 200
 
         matching_restaurants = []
         for restaurant in response.data:
@@ -305,7 +308,8 @@ def search_restaurants_by_image():
         limit = int(request.args.get("limit", 9))
         offset = (page - 1) * limit
         total_matches = len(matching_restaurants)
-        total_pages = math.ceil(total_matches / limit)
+        total_pages = max(1, -(-total_matches // limit)) 
+
         paginated_restaurants = matching_restaurants[offset:offset + limit]
 
         return jsonify({
@@ -315,8 +319,10 @@ def search_restaurants_by_image():
             "page": page,
             "total_pages": total_pages
         }), 200
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
     app.run(debug=True)
